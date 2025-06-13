@@ -1,170 +1,141 @@
 import gleam/io
 import gleam/list
+import vdom/virtual_dom as v_dom
+import vdom/dom_ffi
+import vdom/html as h
 
-pub type Html {
-  HTMLTag(
-    tagname: String, 
-    properties: List(#(String, String)),
-    children: List(Html)
-    )
-  TextNode(content: String)
-}
 
-pub type ModOp{
-  Nop
-  Create(Html)
-  Remove(Html)
-  Replace(Html)
-  Modify(prop_remove: List(#(String, String)), prop_add: List(#(String, String)))
+
+pub fn inital_dom_apply(root: dom_ffi.DomElement, html: v_dom.Html) -> Nil{
+  // this should be used on first start up to load up the html on the page
+  replace_from_dom(root, html)
 }
 
 
-pub type ModTree{
-  ModTree(
-    diff_op: ModOp, 
-    children: List(ModTree))
-}
-
-
-
-pub fn remove_prop(old_prop: List(#(String, String)), new_prop: List(#(String, String))) -> List(#(String, String)){
-  // the properties that should be removed
-  list.filter(old_prop, fn(x) {
-      !list.contains(new_prop, x)
-  })
-}
-
-pub fn set_prop(old_prop: List(#(String, String)), new_prop: List(#(String, String))) -> List(#(String, String)){
-  // the properties that should be set
-  list.filter(new_prop, fn(x) {
-    !list.contains(old_prop, x)
-  })
-}
-
-pub fn diff_one(old: Html, new: Html) -> ModTree{
-
-case old, new {
-  TextNode(txt_1), TextNode(txt_2) -> {
-    case txt_1 == txt_2 {
-      True -> ModTree(Nop, [])
-      False -> ModTree(Replace(new), [])
-    }
-  }
-  HTMLTag(_, _, _), TextNode(_) ->  ModTree(Replace(new), [])
-  HTMLTag(tag_1,  prop_1,  child_1), HTMLTag(tag_2, prop_2, child_2) -> {
-    case tag_1 == tag_2{
-      True -> {
-        let mod_children = diff_list(child_1, child_2)
-        let prop_remove = remove_prop(prop_1, prop_2)
-        let prop_set = set_prop(prop_1, prop_2)
-        ModTree(Modify(prop_remove, prop_set), mod_children)
+pub fn apply_to_dom(root: dom_ffi.DomElement, tree: v_dom.ModTree) -> Nil {
+  // Apply changes to the real dom 
+  case tree.diff_op{
+    v_dom.Nop -> Nil // Do nothing 
+    v_dom.Create(dom) -> {
+      create_element_from_vhtml(root, dom)
+      Nil
       }
-      False -> ModTree(Replace(new), [])
-    }
-  }
-  TextNode(_), HTMLTag(_, _, _) -> ModTree(Replace(new), [])
-}
+    v_dom.Remove(_) -> dom_ffi.remove_element(root)
+    v_dom.Replace(dom) -> replace_from_dom(root, dom)
+    v_dom.Modify(prop_remove, prop_set) -> {
+      modify_dom(root, prop_remove, prop_set)
+      apply_to_modtree_list(root, tree.children)
+      }
+
+      }
 }
 
-
-pub fn diff_list(old: List(Html), new: List(Html)) -> List(ModTree){
-  case old, new {
-    [], [] -> [ModTree(Nop, [])]
-    [old_node], [] -> [ModTree(Remove(old_node), [])]
-    [], [new_node] -> [ModTree(Create(new_node), [])]
-    [old_node], [new_node] -> [diff_one(old_node, new_node)]
-    [old_node, ..rest_1], [new_node, ..rest_2] -> {
-      let tree = diff_one(old_node, new_node)
-      let other = diff_list(rest_1, rest_2)
-      list.append([tree], other)
-    }
-    [], [new_node, ..rest] -> {
-      // creating a list of create Mod Trees
-      list.append([ModTree(Create(new_node), [])],list.map(rest, fn(x){ModTree(Create(x), [])}))
-    }
-    [old_node, ..rest], [] -> {
-      list.append([ModTree(Remove(old_node), [])],list.map(rest, fn(x){ModTree(Remove(x), [])}))
-    }
+pub fn apply_to_modtree_list(root: dom_ffi.DomElement, tree: List(v_dom.ModTree)){
+  case tree{
+    [] -> Nil
+    [item] -> apply_to_dom(root, item)
+    [ele, ..rest] -> {
+      let _throw_away = apply_to_dom(root, ele)
+      apply_to_modtree_list(root, rest)
+      }
   }
 }
 
 
-pub fn h1(props: List(#(String, String)), children: List(Html))-> Html{
-  HTMLTag("h1", props, children)
+pub fn modify_dom(ele: dom_ffi.DomElement, prop_remove: List(#(String, String)), prop_add: List(#(String, String))){
+  dom_ffi.set_all_attributes(ele, prop_add)
+  dom_ffi.remove_all_attributes(ele, prop_remove)
+}
+
+pub fn replace_from_dom(root: dom_ffi.DomElement, element: v_dom.Html)-> Nil {
+  let replacement = create_element_from_vhtml(root, element)
+  dom_ffi.dom_replace_with(root, replacement)
 }
 
 
-pub fn p(props: List(#(String, String)), children: List(Html))-> Html{
-  HTMLTag("p", props, children)
+pub fn create_element_from_vhtml(root: dom_ffi.DomElement, v_element: v_dom.Html)-> dom_ffi.DomElement{
+
+  case v_element {
+    v_dom.TextNode(content) -> {
+      dom_ffi.set_element_text(root, content)
+      root
+      
+      }
+
+    v_dom.HTMLTag(tag, props, children) -> {
+          let new_element = dom_ffi.create_element(tag)
+          dom_ffi.set_all_attributes(new_element, props)
+          dom_ffi.append_element(root, new_element)
+
+          case children{
+            [] -> Nil 
+            [first] -> {
+              let _node = create_element_from_vhtml(new_element, first)
+              Nil 
+              }
+            [first, ..rest] -> {
+              let _node = create_element_from_vhtml(new_element, first)
+              list.each(rest, fn(x){create_element_from_vhtml(new_element, x)})
+            }
+          }
+          new_element
+        
+        }
+      }
 }
 
-pub fn text(content: String)-> Html{
-  TextNode(content)
-}
 
-pub fn div(props: List(#(String, String)), children: List(Html))-> Html{
-  HTMLTag("div", props, children)
-}
 
-pub fn button(props: List(#(String, String)), children: List(Html))-> Html{
-  HTMLTag("div", props, children)
-}
 
-pub fn li(content: List(Html), props: List(#(String, String)))-> Html{
-  HTMLTag("li", props, content)
-}
-
-pub fn ul(items: List(Html), props: List(#(String, String))){
-  HTMLTag("li", props, items)
-}
-
-pub fn view()-> Html{
-  div(
+pub fn view()-> v_dom.Html{
+  h.div(
     [],
-    [p([#("id", "example"), #("colour", "blue")], [TextNode("Hello world")]),])
+    [h.p([#("id", "example"), #("colour", "blue")], [v_dom.TextNode("Hello world")]),])
 
 }
 
 
-pub fn view_2()-> Html{
-  div(
+pub fn view_2()-> v_dom.Html{
+  h.div(
     [#("class", "main")],
-    [p([#("id", "example")], [TextNode("Hello Not World")]),])
+    [h.p([#("id", "example")], [v_dom.TextNode("Hello Not World")]),])
 
 }
 
-fn view_3(){
+pub fn view_3(){
 
-  ul(
-    [ li([TextNode("Item 1")], []),
-      li([TextNode("Item 2")], []),
-      li([TextNode("Item 3")], []),
-      li([TextNode("Item 4")], []),
-      li([TextNode("Item 5")], []),
-      li([TextNode("Item 6")], [])
+  h.ul(
+    [ h.li([v_dom.TextNode("Item 1")], []),
+      h.li([v_dom.TextNode("Item 2")], []),
+      h.li([v_dom.TextNode("Item 3")], []),
+      h.li([v_dom.TextNode("Item 4")], []),
+      h.li([v_dom.TextNode("Item 5")], []),
+      h.li([v_dom.TextNode("Item 6")], [])
     ], 
     []
   )
 }
 
 
-fn view_4(){
+pub fn view_4(){
 
-  div([#("class", "coming soon")], 
-      [p([], [ TextNode("Fetch data")])]
+  h.div([#("class", "coming soon")], 
+      [h.p([], [ v_dom.TextNode("Fetch data")])]
   )
+}
+
+pub fn current(){
+
+  h.div([#("id", "main")], 
+      []
+  )
+}
+
+pub fn diff_one_proxy(old: v_dom.Html, new: v_dom.Html){
+  v_dom.diff_one(old, new)
 }
 
 
 pub fn main() -> Nil {
-  let v1 = view()
-  let v2 = view_2()
-  let v3 = view_3()
-  let v4 = view_4()
-  
-  let tree = diff_one(v4, v3)
-  echo v4
-  echo v3
-  echo tree
-  io.println("Hello from vdom!")
+  io.println("Starting up")
 }

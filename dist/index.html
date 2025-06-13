@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<head></head>
+<body>
+    <div id="main"></div>
+    <script type="module">
+    import {main, view_2, apply_to_dom, current, diff_one_proxy, view_3} from "/vdom.js"
+    
+   document.addEventListener("DOMContentLoaded", () => {
+    const dispatch = main({});
+    
+    let dom = document.querySelector("#main")
+    let curr = current()
+
+    let v4 = view_3()
+
+    let mod_tree = diff_one_proxy(curr, v4)
+    console.log(mod_tree)
+    apply_to_dom(dom, mod_tree)
+
+  });
+    </script>
+</body>
+<html>
