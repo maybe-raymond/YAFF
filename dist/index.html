@@ -3,10 +3,9 @@
 <body>
     <div id="main"></div>
     <script type="module">
-    import {main, view_2, apply_to_dom, current, diff_one_proxy, view_3} from "/vdom.js"
+    import { view_2, apply_to_dom, current, diff_one_proxy, view_3} from "/vdom.js"
     
-   document.addEventListener("DOMContentLoaded", () => {
-    const dispatch = main({});
+    document.addEventListener("DOMContentLoaded", () => {
     
     let dom = document.querySelector("#main")
     let curr = current()
