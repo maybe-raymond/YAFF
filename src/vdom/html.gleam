@@ -1,30 +1,45 @@
-import vdom/virtual_dom as v_dom 
+import vdom/virtual_dom as v_dom
+import gleam/list 
 
-pub fn h1(props: List(#(String, String)), children: List(v_dom.Html))-> v_dom.Html{
+pub fn h1(
+  props: List(v_dom.Atrribute(msg)),
+  children: List(v_dom.Html(msg)),
+) -> v_dom.Html(msg) {
   v_dom.HTMLTag("h1", props, children)
 }
 
-
-pub fn p(props: List(#(String, String)), children: List( v_dom.Html))->  v_dom.Html{
-   v_dom.HTMLTag("p", props, children)
+pub fn p(
+  props: List(v_dom.Atrribute(msg)),
+  children: List(v_dom.Html(msg)),
+) -> v_dom.Html(msg) {
+  v_dom.HTMLTag("p", props, children)
 }
 
-pub fn text(content: String)->  v_dom.Html{
-   v_dom.TextNode(content)
+pub fn text(content: String) -> v_dom.Html(msg) {
+  v_dom.TextNode(content)
 }
 
-pub fn div(props: List(#(String, String)), children: List( v_dom.Html))->  v_dom.Html{
-   v_dom.HTMLTag("div", props, children)
-}
-
-pub fn button(props: List(#(String, String)), children: List( v_dom.Html))->  v_dom.Html{
+pub fn div(
+  props: List(v_dom.Atrribute(msg)),
+  children: List(v_dom.Html(msg)),
+) -> v_dom.Html(msg) {
   v_dom.HTMLTag("div", props, children)
 }
 
-pub fn li(content: List(v_dom.Html), props: List(#(String, String)))->  v_dom.Html{
+pub fn button(
+  props: List(v_dom.Atrribute(msg)),
+  children: List(v_dom.Html(msg)),
+) -> v_dom.Html(msg) {
+  v_dom.HTMLTag("button", list.append(props,[v_dom.Prop("type", "button")]), children)
+}
+
+pub fn li(
+  content: List(v_dom.Html(msg)),
+  props: List(v_dom.Atrribute(msg)),
+) -> v_dom.Html(msg) {
   v_dom.HTMLTag("li", props, content)
 }
 
-pub fn ul(items: List(v_dom.Html), props: List(#(String, String))){
+pub fn ul(items: List(v_dom.Html(msg)), props: List(v_dom.Atrribute(msg))) {
   v_dom.HTMLTag("ul", props, items)
 }

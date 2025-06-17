@@ -1,0 +1,127 @@
+pub fn view()-> v_dom.Html(msg){
+  h.div(
+    [],
+    [h.p([v_dom.Prop("id", "example"), v_dom.Prop("colour", "blue")], [v_dom.TextNode("Hello world")]),])
+
+}
+
+
+pub fn view_2()-> v_dom.Html(msg){
+  h.div(
+    [v_dom.Prop("class", "main")],
+    [h.p([v_dom.Prop("id", "example")], [v_dom.TextNode("Hello Not World")]),])
+
+}
+
+pub fn view_3(){
+
+  h.ul(
+    [ h.li([v_dom.TextNode("Item 1")], []),
+      h.li([v_dom.TextNode("Item 2")], []),
+      h.li([v_dom.TextNode("Item 3")], []),
+      h.li([v_dom.TextNode("Item 4")], []),
+      h.li([v_dom.TextNode("Item 5")], []),
+      h.li([v_dom.TextNode("Item 6")], [])
+    ], 
+    []
+  )
+}
+
+
+pub fn view_4(){
+
+  h.div([v_dom.Prop("class", "coming soon")], 
+      [h.p([], [ v_dom.TextNode("Fetch data")])]
+  )
+}
+
+
+case children{
+            [] -> Nil 
+            [first] -> {
+              let node_and_event = create_element_from_vhtml(new_element, first)
+              list.append 
+              }
+            [first, ..rest] -> {
+              let _node = create_element_from_vhtml(new_element, first)
+              list.each(rest, fn(x){create_element_from_vhtml(new_element, x)})
+            }
+          }
+          new_element
+
+
+
+
+// code for testing out create 
+
+let old_view = div([], [])
+let new_view = div([], [p([], [TextNode("Hello")])])
+
+ModTree(Nop, [
+  ModTree(Create([p([], [TextNode("Hello")])]), [])
+  ])
+
+
+// list example 
+let old_view = ul([][
+  li([], [TextNode("Item 1")]),
+  li([], [TextNode("Item 2")]),
+  li([], [TextNode("Item 3")]),
+])
+
+let new_view = ul([][
+  li([], [TextNode("Item 1")]),
+  li([], [TextNode("Item 2")]),
+  li([], [TextNode("Item 3")]),
+  li([], [TextNode("Item 4")]),
+  li([], [TextNode("Item 5")]),
+])
+
+ModTree(Nop [
+  ModTree(Nop, [ModTree(Nop, [])])
+  ModTree(Nop, [ModTree(Nop, [])])
+  ModTree(Nop, [ModTree(Nop, [])])
+  ModTree(Create(li([], [TextNode("Item 4")])), [])
+  ModTree(Create(li([], [TextNode("Item 4")])), [])
+])
+
+
+// Remove code
+
+let old_view = div([], [p([], [TextNode("Hello")])])
+let old_view = div([], [])
+
+ModTree(Nop, [
+  ModTree(Remove([p([], [TextNode("Hello")])]), [] )
+  ])
+
+
+// list example 
+
+let old_view = ul([][
+  li([], [TextNode("Item 1")]),
+  li([], [TextNode("Item 2")]),
+  li([], [TextNode("Item 3")]),
+  li([], [TextNode("Item 4")]),
+  li([], [TextNode("Item 5")]),
+])
+
+let new_view = ul([][
+  li([], [TextNode("Item 1")]),
+  li([], [TextNode("Item 2")]),
+  li([], [TextNode("Item 3")]),
+])
+
+
+
+ModTree(Nop [
+  ModTree(Nop, [ModTree(Nop, [])])
+  ModTree(Nop, [ModTree(Nop, [])])
+  ModTree(Nop, [ModTree(Nop, [])])
+  ModTree(Remove(li([], [TextNode("Item 4")])), [])
+  ModTree(Remove(li([], [TextNode("Item 5")])), [])
+])
+
+
+// replace 
+

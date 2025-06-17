@@ -1,22 +1,17 @@
 <!DOCTYPE html>
-<head></head>
+<head>
+  <title>Testing things out</title>
+</head>
 <body>
     <div id="main"></div>
     <script type="module">
-    import { view_2, apply_to_dom, current, diff_one_proxy, view_3} from "/vdom.js"
+  
+    import { main} from "/vdom.js"
     
     document.addEventListener("DOMContentLoaded", () => {
-    
-    let dom = document.querySelector("#main")
-    let curr = current()
-
-    let v4 = view_3()
-
-    let mod_tree = diff_one_proxy(curr, v4)
-    console.log(mod_tree)
-    apply_to_dom(dom, mod_tree)
-
+      main({})
   });
+  
     </script>
 </body>
 <html>
