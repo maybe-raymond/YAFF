@@ -31,8 +31,8 @@ export function remove_event(element, type, args){
     })
 }
 
-export function log_element(element){
-    console.log(element)
+export function log_element(txt, element){
+    console.log(`${txt} ${element}`)
 }
 
 export function get_element_value(element){
@@ -50,7 +50,9 @@ export function set_element_text(element, content){
 }
 
 export function remove_element(element){
+    console.log(`Removing ${element} from dom`)
     element.remove()
+    console.log("element removed from dom")
 }
 
 export function replace_children(root, children){
@@ -93,16 +95,77 @@ export function append_element(parent, child){
 }
 
 export function set_element_event_prop(element, msg){
-    element["_event_msg"] = msg
+    //Object.defineProperty(element, "event_msg", msg)
+    element["event_msg"] = msg 
+    //console.log(msg)
 }
 
 export function remove_element_event_prop(element, msg){
-    element["_event_msg"] = Null
+    element["event_msg"] = Null
 }
 
 export function get_children(element){
     let values = List.fromArray(element.children)
     return values
+}
+
+
+
+class HandleInputEvent{
+    constructor(root, update, view, diff_one, apply_dom){
+        this.data = ""
+        this.root = root 
+        this.update = update
+        this.view = view 
+        this.apply_dom = apply_dom
+        this.diff_one  = diff_one
+    }
+
+    run(event, state, current_view){
+         console.log("input")
+       if(event.inputType.includes("insert")){
+        this.data = this.data + event.data
+       } 
+       else if(event.inputType.includes("delete")){
+        let new_string = this.data.split("") // getting rid of the last string
+        new_string.pop()
+        this.data = new_string.join("")
+       }
+
+       let arg = event.target["event_msg"](this.data)
+        let new_state = this.update(arg, state)
+        let new_html = this.view(new_state)
+        let mod_tree = this.diff_one(current_view, new_html)
+        //console.log(mod_tree)
+
+        this.apply_dom(this.root, mod_tree)
+
+        return [new_state, new_html]
+    }
+}
+
+
+class HandleClickEvent{
+    constructor(root,update, view, diff_one, apply_dom){
+        this.data = ""
+        this.root = root 
+        this.update = update
+        this.view = view 
+        this.apply_dom = apply_dom
+        this.diff_one  = diff_one
+    }
+
+    run(event, state, current_view){
+        let arg = event.target["event_msg"]
+        console.log("click")
+        let new_state = this.update(arg, state)
+        let new_html = this.view(new_state)
+        let mod_tree = this.diff_one(current_view, new_html)
+        //console.log(mod_tree)
+        this.apply_dom(this.root, mod_tree)
+
+        return [new_state, new_html]
+    }
 }
 
 export function Browser_init_loop(init_model, update, view, root, events, diff_one, apply_dom){
@@ -114,26 +177,24 @@ export function Browser_init_loop(init_model, update, view, root, events, diff_o
         let curr_state = init_model // current state
         let curr_view = view(init_model) // current view
 
-        console.log({curr_state, curr_view})
+        //console.log({curr_state, curr_view})
         let event_array = [...events]
 
-        console.log(event_array)
+        //console.log(event_array)
         event_array.forEach((name) => {
+            
+            let event_runner = (name == "input")? new HandleInputEvent(root, update, view, diff_one, apply_dom) : new HandleClickEvent(root, update, view, diff_one, apply_dom)
+       
+           
             root.addEventListener(name, (event) => {
-                console.log("clicked")
-                if (event.target && event.target["_event_msg"]){
-                    let new_state = update(event["_event_msg"], curr_state)
-                    let new_html = view(new_state)
-                    let mod_tree = diff_one(curr_view, new_html)
-                    apply_dom(root, mod_tree)
-                    console.log({new_html})
-                    console.log({curr_view})
-                    console.log({new_state})
-                    console.log({curr_state})
-                    console.log({mod_tree})
+                //console.log("clicked")
+                //console.log(event)
+                if (event.target && event.target["event_msg"]){
+                    let [new_state, new_view] = event_runner.run(event, curr_state, curr_view)
+                    //console.log(new_state, new_view)
                     curr_state = new_state
-                    curr_view = new_html
-
+                    curr_view = new_view
+                   
                 }
                 })
             })
