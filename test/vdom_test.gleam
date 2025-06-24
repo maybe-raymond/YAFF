@@ -48,12 +48,12 @@ let tree = v_dom.ModTree(v_dom.Nop,
 
 
   let result = v_dom.diff_one(old_view, new_view)
-
   should.equal(tree, result)
 
 }
 
 
+// remove from dom
 pub fn remove_1_test() {
   let inner = h.p([], [v_dom.TextNode("Hello")])
   let new_view = h.div([], [])
@@ -64,9 +64,7 @@ pub fn remove_1_test() {
   ])
 
   let result = v_dom.diff_one(old_view, new_view)
-
   should.equal(tree, result)
-
 }
 
 pub fn remove_2_test() {
@@ -98,9 +96,7 @@ let tree = v_dom.ModTree(v_dom.Nop,
 }
 
 
-
-
-
+// replace from dom 
 pub fn replace_1_test() {
   let inner = h.p([], [v_dom.TextNode("Hello")])
 
@@ -112,9 +108,7 @@ pub fn replace_1_test() {
   ])
 
   let result = v_dom.diff_one(old_view, new_view)
-
   should.equal(tree, result)
-
 }
 
 pub fn replace_2_test() {
@@ -141,33 +135,117 @@ pub fn replace_2_test() {
 }
 
 
-
 pub type Msg {
   Increment
   Decrement
 }
 
+
 pub fn replace_counter_test() {
+
   let old_view = h.div([], [
     h.button([v_dom.onclick(Increment)], [v_dom.TextNode("+")]),
     h.p([], [v_dom.TextNode("0")]),
     h.button([v_dom.onclick(Decrement)], [v_dom.TextNode("-")]),
   ])
 
-let new_view = h.div([], [
+  let new_view = h.div([], [
+      h.button([v_dom.onclick(Increment)], [v_dom.TextNode("+")]),
+      h.p([], [v_dom.TextNode("1")]),
+      h.button([v_dom.onclick(Decrement)], [v_dom.TextNode("-")]),
+    ])
+
+  let tree = v_dom.ModTree(v_dom.Nop, 
+    [v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [])]),
+    v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Replace(v_dom.TextNode("1")), [])]),
+    v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [])]),
+  ])
+
+  let result = v_dom.diff_one(old_view, new_view)
+  should.equal(tree, result)
+}
+
+
+// extract events 
+
+pub fn extract_event_test(){
+   let old_view = h.div([], [
     h.button([v_dom.onclick(Increment)], [v_dom.TextNode("+")]),
-    h.p([], [v_dom.TextNode("1")]),
+    h.p([], [v_dom.TextNode("0")]),
     h.button([v_dom.onclick(Decrement)], [v_dom.TextNode("-")]),
   ])
 
-let tree = v_dom.ModTree(v_dom.Nop, 
-  [v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [])]),
-  v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Replace(v_dom.TextNode("1")), [])]),
-  v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [])]),
-])
+  let events = [v_dom.onclick(Increment), v_dom.onclick(Decrement)]
+  let result = v_dom.extract_all_events(old_view)
+  should.equal(events, result)
 
+
+}
+
+// modify 
+pub fn modify_1_test() {
+  let inner = h.p([], [v_dom.TextNode("Hello")])
+
+  let old_view = h.div([v_dom.Prop("class", "to be changed")], [inner])
+  let new_view = h.div([v_dom.Prop("class", "changed")], [inner])
+
+  let tree = v_dom.ModTree(v_dom.Modify([], [v_dom.Prop("class", "changed")]), [v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [])])])
 
   let result = v_dom.diff_one(old_view, new_view)
+  should.equal(tree, result)
+}
 
+pub fn modify_2_test() {
+  // removing a prop
+
+  let inner = h.p([], [v_dom.TextNode("Hello")])
+
+  let old_view = h.div([v_dom.Prop("class", "to be changed")], [inner])
+  let new_view = h.div([], [inner])
+
+  let tree = v_dom.ModTree(v_dom.Modify([v_dom.Prop("class", "to be changed")], []), [v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [])])])
+
+  let result = v_dom.diff_one(old_view, new_view)
+  should.equal(tree, result)
+}
+
+pub fn modify_and_replace_test() {
+
+  let li_node = fn(text:String){
+    h.div([], [v_dom.TextNode(text), h.button([], [v_dom.TextNode("Remove")])])
+  }
+  let old_view = h.ul([
+    h.li([li_node("One")], []),
+    h.li([li_node("Two")], []),
+    h.li([li_node("Three")], []),
+  ], [])
+
+  let new_view = h.ul([
+    h.li([li_node("One")], []),
+    h.li([li_node("Three")], [])], [])
+
+  // this was a pain to write out
+  let tree = v_dom.ModTree(v_dom.Nop, [
+    v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, []), v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [])])])]),
+    v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Replace(v_dom.TextNode("Three")),[]), v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [])])])]),
+    v_dom.ModTree(v_dom.Remove( h.li([li_node("Three")], [])), [])
+  ])
+  let result = v_dom.diff_one(old_view, new_view)
+
+  should.equal(tree, result)
+}
+
+
+pub fn modify_3_test() {
+  // having the same prop so both lists are empty
+
+  let inner = h.p([], [v_dom.TextNode("Hello")])
+
+  let old_view = h.div([v_dom.Prop("class", "to be changed")], [inner])
+  let new_view = h.div([v_dom.Prop("class", "to be changed")], [inner])
+
+  let tree = v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [v_dom.ModTree(v_dom.Nop, [])])])
+
+  let result = v_dom.diff_one(old_view, new_view)
   should.equal(tree, result)
 }

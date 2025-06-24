@@ -109,11 +109,15 @@ export function get_children(element){
     return values
 }
 
+export function get_child_nodes(element){
+    let values = List.fromArray(element.childNodes)
+    return values
+}
 
 
 class HandleInputEvent{
     constructor(root, update, view, diff_one, apply_dom){
-        this.data = ""
+        this.Data_map = new Map() // keeps tract of an element and its string content
         this.root = root 
         this.update = update
         this.view = view 
@@ -122,25 +126,38 @@ class HandleInputEvent{
     }
 
     run(event, state, current_view){
-         console.log("input")
+        console.log("input")
+        let current_data = ""
+        if (this.Data_map.has(event.target)){
+            current_data = this.Data_map.get(event.target)
+        } 
+        else{
+            this.Data_map.set(event.target, "")
+        }
+
        if(event.inputType.includes("insert")){
-        this.data = this.data + event.data
+        current_data  = current_data + event.data
        } 
        else if(event.inputType.includes("delete")){
-        let new_string = this.data.split("") // getting rid of the last string
+        let new_string = current_data.split("") // getting rid of the last string
         new_string.pop()
-        this.data = new_string.join("")
+        current_data  = new_string.join("")
        }
 
-       let arg = event.target["event_msg"](this.data)
-        let new_state = this.update(arg, state)
-        let new_html = this.view(new_state)
-        let mod_tree = this.diff_one(current_view, new_html)
-        //console.log(mod_tree)
+       this.Data_map.set(event.target, current_data)
 
-        this.apply_dom(this.root, mod_tree)
+       let arg = event.target["event_msg"](current_data)
+            let new_state = this.update(arg, state)
+            let new_html = this.view(new_state)
+            let mod_tree = this.diff_one(current_view, new_html)
+            //console.log(mod_tree)
 
-        return [new_state, new_html]
+            window.requestAnimationFrame(() => {
+                this.apply_dom(this.root, mod_tree)
+
+            })
+            
+            return [new_state, new_html]
     }
 }
 
@@ -161,8 +178,12 @@ class HandleClickEvent{
         let new_state = this.update(arg, state)
         let new_html = this.view(new_state)
         let mod_tree = this.diff_one(current_view, new_html)
-        //console.log(mod_tree)
-        this.apply_dom(this.root, mod_tree)
+        console.log(mod_tree)
+        window.requestAnimationFrame(() => {
+                this.apply_dom(this.root, mod_tree)
+
+        })
+        
 
         return [new_state, new_html]
     }
@@ -191,9 +212,10 @@ export function Browser_init_loop(init_model, update, view, root, events, diff_o
                 //console.log(event)
                 if (event.target && event.target["event_msg"]){
                     let [new_state, new_view] = event_runner.run(event, curr_state, curr_view)
-                    //console.log(new_state, new_view)
+                    console.log(new_state, new_view)
                     curr_state = new_state
                     curr_view = new_view
+
                    
                 }
                 })

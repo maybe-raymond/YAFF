@@ -1,3 +1,4 @@
+import gleam/io
 import gleam/list
 
 
@@ -36,7 +37,6 @@ pub type ModOp(msg) {
   Remove(Html(msg))
   Replace(Html(msg))
   Modify(
-    element: Html(msg),
     prop_remove: List(Attribute(msg)),
     prop_add: List(Attribute(msg)),
   )
@@ -46,12 +46,48 @@ pub type ModTree(msg) {
   ModTree(diff_op: ModOp(msg), children: List(ModTree(msg)))
 }
 
+
+
+pub fn is_event(item: Attribute(msg)){
+  case item{
+    Prop(_, _) -> False 
+    _ -> True
+  }
+}
+
+pub fn extract_all_events(root: Html(msg))-> List(Attribute(msg)){
+
+  case root {
+    HTMLTag(_, prop, children) -> {
+      let current_events = list.filter(prop, is_event)
+      let rest = list.flatten(list.map(children, extract_all_events))
+      list.append(current_events, rest)
+    }
+    TextNode(_) -> []
+  }
+}
+
+
+fn contains_prop_name(lst: List(Attribute(msg)), item: Attribute(msg))-> Bool{
+  list.fold_until(lst, False, fn(acc, i){
+    let result = case i {
+      Prop(name, _) -> name == item.name 
+      Event(name, _) -> name == item.name 
+      EventFun(name, _) -> name == item.name
+    }
+    case result{
+      True -> list.Stop(True)
+      False -> list.Continue(False)
+    }
+  })
+}
+
 pub fn remove_prop(
   old_prop: List(Attribute(msg)),
   new_prop: List(Attribute(msg)),
 ) -> List(Attribute(msg)) {
   // the properties that should be removed
-  list.filter(old_prop, fn(x) { !list.contains(new_prop, x) })
+  list.filter(old_prop, fn(x) {!contains_prop_name(new_prop, x) })
 }
 
 pub fn set_prop(
@@ -59,7 +95,8 @@ pub fn set_prop(
   new_prop: List(Attribute(msg)),
 ) -> List(Attribute(msg)) {
   // the properties that should be set
-  list.filter(new_prop, fn(x) { !list.contains(old_prop, x) })
+  list.filter(new_prop, fn(x) {
+    !list.contains(old_prop, x)})
 }
 
 pub fn diff_one(old: Html(msg), new: Html(msg)) -> ModTree(msg) {
@@ -77,9 +114,14 @@ pub fn diff_one(old: Html(msg), new: Html(msg)) -> ModTree(msg) {
           let mod_children = diff_list(child_1, child_2)
           let prop_remove = remove_prop(prop_1, prop_2)
           let prop_set = set_prop(prop_1, prop_2)
-          case list.is_empty(prop_1) == list.is_empty(prop_2) {
+         
+          case list.is_empty(prop_remove) == list.is_empty(prop_set) {
             True -> ModTree(Nop, mod_children)
-            False -> ModTree(Modify(new, prop_remove, prop_set), mod_children)
+            False -> {
+              //echo prop_remove
+              //echo prop_set
+              ModTree(Modify(prop_remove, prop_set), mod_children)
+              }
           }
         }
         False -> ModTree(Replace(new), [])

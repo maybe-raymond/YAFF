@@ -40,13 +40,16 @@ pub fn remove_attribute(ele: DomElement, attribtes: #(String, String)) -> Nil
 pub fn set_element_event_prop(ele: DomElement, msg: value) -> Nil
 
 @external(javascript, "../dom_ffi.mjs", "remove_element_event_prop")
-pub fn remove_element_event_prop(ele: DomElement) -> Nil
+pub fn remove_event_prop(ele: DomElement) -> Nil
 
 @external(javascript, "../dom_ffi.mjs", "append_element")
 pub fn append_element(parent: DomElement, child: DomElement) -> Nil
 
 @external(javascript, "../dom_ffi.mjs", "get_children")
 pub fn get_children(element: DomElement) -> List(DomElement)
+
+@external(javascript, "../dom_ffi.mjs", "get_child_nodes")
+pub fn get_child_nodes(element: DomElement) -> List(DomElement)
 
 @external(javascript, "../dom_ffi.mjs", "replace_children")
 pub fn replace_children(root: DomElement, children: List(DomElement)) -> Nil
@@ -119,15 +122,15 @@ pub fn remove_attribute_type(
     [first] -> {
       case first {
         v_dom.Prop(name, value) -> remove_attribute(ele, #(name, value))
-        v_dom.Event(_, _) -> remove_element_event_prop(ele)
-        v_dom.EventFun(_, _) -> remove_element_event_prop(ele)
+        v_dom.Event(_, _) -> remove_event_prop(ele)
+        v_dom.EventFun(_, _) -> remove_event_prop(ele)
       }
     }
     [first, ..rest] -> {
       case first {
         v_dom.Prop(name, value) -> set_attribute(ele, #(name, value))
-        v_dom.Event(_, _) -> remove_element_event_prop(ele)
-        v_dom.EventFun(_, _) -> remove_element_event_prop(ele)
+        v_dom.Event(_, _) -> remove_event_prop(ele)
+        v_dom.EventFun(_, _) -> remove_event_prop(ele)
       }
       remove_attribute_type(ele, rest)
     }

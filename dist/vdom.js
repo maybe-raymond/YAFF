@@ -1346,6 +1346,68 @@ var Dict = class _Dict {
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
 
+// build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
+var Nil = void 0;
+var NOT_FOUND = {};
+var unicode_whitespaces = [
+  " ",
+  // Space
+  "	",
+  // Horizontal tab
+  "\n",
+  // Line feed
+  "\v",
+  // Vertical tab
+  "\f",
+  // Form feed
+  "\r",
+  // Carriage return
+  "\x85",
+  // Next line
+  "\u2028",
+  // Line separator
+  "\u2029"
+  // Paragraph separator
+].join("");
+var trim_start_regex = /* @__PURE__ */ new RegExp(
+  `^[${unicode_whitespaces}]*`
+);
+var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
+function console_log(term) {
+  console.log(term);
+}
+function print(string2) {
+  if (typeof process === "object" && process.stdout?.write) {
+    process.stdout.write(string2);
+  } else if (typeof Deno === "object") {
+    Deno.stdout.writeSync(new TextEncoder().encode(string2));
+  } else {
+    console.log(string2);
+  }
+}
+function print_error(string2) {
+  if (typeof process === "object" && process.stderr?.write) {
+    process.stderr.write(string2);
+  } else if (typeof Deno === "object") {
+    Deno.stderr.writeSync(new TextEncoder().encode(string2));
+  } else {
+    console.error(string2);
+  }
+}
+function new_map() {
+  return Dict.new();
+}
+function map_get(map2, key) {
+  const value = map2.get(key, NOT_FOUND);
+  if (value === NOT_FOUND) {
+    return new Error(Nil);
+  }
+  return new Ok(value);
+}
+function map_insert(key, value, map2) {
+  return map2.set(key, value);
+}
+
 // build/dev/javascript/gleam_stdlib/gleam/dict.mjs
 function do_has_key(key, dict2) {
   return !isEqual(map_get(dict2, key), new Error(void 0));
@@ -1358,6 +1420,18 @@ function insert(dict2, key, value) {
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/list.mjs
+var Continue = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var Stop = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
 function reverse_and_prepend(loop$prefix, loop$suffix) {
   while (true) {
     let prefix = loop$prefix;
@@ -1450,28 +1524,6 @@ function map_loop(loop$list, loop$fun, loop$acc) {
 function map(list2, fun) {
   return map_loop(list2, fun, toList([]));
 }
-function index_map_loop(loop$list, loop$fun, loop$index, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let fun = loop$fun;
-    let index3 = loop$index;
-    let acc = loop$acc;
-    if (list2 instanceof Empty) {
-      return reverse(acc);
-    } else {
-      let first$1 = list2.head;
-      let rest$1 = list2.tail;
-      let acc$1 = prepend(fun(first$1, index3), acc);
-      loop$list = rest$1;
-      loop$fun = fun;
-      loop$index = index3 + 1;
-      loop$acc = acc$1;
-    }
-  }
-}
-function index_map(list2, fun) {
-  return index_map_loop(list2, fun, 0, toList([]));
-}
 function append_loop(loop$first, loop$second) {
   while (true) {
     let first2 = loop$first;
@@ -1486,10 +1538,10 @@ function append_loop(loop$first, loop$second) {
     }
   }
 }
-function append(first2, second) {
+function append2(first2, second) {
   return append_loop(reverse(first2), second);
 }
-function fold(loop$list, loop$initial, loop$fun) {
+function fold_until(loop$list, loop$initial, loop$fun) {
   while (true) {
     let list2 = loop$list;
     let initial = loop$initial;
@@ -1499,9 +1551,16 @@ function fold(loop$list, loop$initial, loop$fun) {
     } else {
       let first$1 = list2.head;
       let rest$1 = list2.tail;
-      loop$list = rest$1;
-      loop$initial = fun(initial, first$1);
-      loop$fun = fun;
+      let $ = fun(initial, first$1);
+      if ($ instanceof Continue) {
+        let next_accumulator = $[0];
+        loop$list = rest$1;
+        loop$initial = next_accumulator;
+        loop$fun = fun;
+      } else {
+        let b = $[0];
+        return b;
+      }
     }
   }
 }
@@ -1547,65 +1606,6 @@ function each(loop$list, loop$f) {
   }
 }
 
-// build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
-var Nil = void 0;
-var NOT_FOUND = {};
-var unicode_whitespaces = [
-  " ",
-  // Space
-  "	",
-  // Horizontal tab
-  "\n",
-  // Line feed
-  "\v",
-  // Vertical tab
-  "\f",
-  // Form feed
-  "\r",
-  // Carriage return
-  "\x85",
-  // Next line
-  "\u2028",
-  // Line separator
-  "\u2029"
-  // Paragraph separator
-].join("");
-var trim_start_regex = /* @__PURE__ */ new RegExp(
-  `^[${unicode_whitespaces}]*`
-);
-var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
-function print(string2) {
-  if (typeof process === "object" && process.stdout?.write) {
-    process.stdout.write(string2);
-  } else if (typeof Deno === "object") {
-    Deno.stdout.writeSync(new TextEncoder().encode(string2));
-  } else {
-    console.log(string2);
-  }
-}
-function print_error(string2) {
-  if (typeof process === "object" && process.stderr?.write) {
-    process.stderr.write(string2);
-  } else if (typeof Deno === "object") {
-    Deno.stderr.writeSync(new TextEncoder().encode(string2));
-  } else {
-    console.error(string2);
-  }
-}
-function new_map() {
-  return Dict.new();
-}
-function map_get(map2, key) {
-  const value = map2.get(key, NOT_FOUND);
-  if (value === NOT_FOUND) {
-    return new Error(Nil);
-  }
-  return new Ok(value);
-}
-function map_insert(key, value, map2) {
-  return map2.set(key, value);
-}
-
 // build/dev/javascript/vdom/dom_ffi.mjs
 function query_selector(selectors) {
   const node = document.querySelector(selectors);
@@ -1645,13 +1645,13 @@ function set_element_event_prop(element, msg) {
 function remove_element_event_prop(element, msg) {
   element["event_msg"] = Null;
 }
-function get_children(element) {
-  let values2 = List.fromArray(element.children);
+function get_child_nodes(element) {
+  let values2 = List.fromArray(element.childNodes);
   return values2;
 }
 var HandleInputEvent = class {
   constructor(root, update2, view, diff_one2, apply_dom) {
-    this.data = "";
+    this.Data_map = /* @__PURE__ */ new Map();
     this.root = root;
     this.update = update2;
     this.view = view;
@@ -1660,18 +1660,27 @@ var HandleInputEvent = class {
   }
   run(event, state, current_view) {
     console.log("input");
-    if (event.inputType.includes("insert")) {
-      this.data = this.data + event.data;
-    } else if (event.inputType.includes("delete")) {
-      let new_string = this.data.split("");
-      new_string.pop();
-      this.data = new_string.join("");
+    let current_data = "";
+    if (this.Data_map.has(event.target)) {
+      current_data = this.Data_map.get(event.target);
+    } else {
+      this.Data_map.set(event.target, "");
     }
-    let arg = event.target["event_msg"](this.data);
+    if (event.inputType.includes("insert")) {
+      current_data = current_data + event.data;
+    } else if (event.inputType.includes("delete")) {
+      let new_string = current_data.split("");
+      new_string.pop();
+      current_data = new_string.join("");
+    }
+    this.Data_map.set(event.target, current_data);
+    let arg = event.target["event_msg"](current_data);
     let new_state = this.update(arg, state);
     let new_html = this.view(new_state);
     let mod_tree = this.diff_one(current_view, new_html);
-    this.apply_dom(this.root, mod_tree);
+    window.requestAnimationFrame(() => {
+      this.apply_dom(this.root, mod_tree);
+    });
     return [new_state, new_html];
   }
 };
@@ -1690,7 +1699,10 @@ var HandleClickEvent = class {
     let new_state = this.update(arg, state);
     let new_html = this.view(new_state);
     let mod_tree = this.diff_one(current_view, new_html);
-    this.apply_dom(this.root, mod_tree);
+    console.log(mod_tree);
+    window.requestAnimationFrame(() => {
+      this.apply_dom(this.root, mod_tree);
+    });
     return [new_state, new_html];
   }
 };
@@ -1704,6 +1716,7 @@ function Browser_init_loop(init_model, update2, view, root, events, diff_one2, a
     root.addEventListener(name, (event) => {
       if (event.target && event.target["event_msg"]) {
         let [new_state, new_view] = event_runner.run(event, curr_state, curr_view);
+        console.log(new_state, new_view);
         curr_state = new_state;
         curr_view = new_view;
       }
@@ -1768,9 +1781,8 @@ var Replace = class extends CustomType {
   }
 };
 var Modify = class extends CustomType {
-  constructor(element, prop_remove, prop_add) {
+  constructor(prop_remove, prop_add) {
     super();
-    this.element = element;
     this.prop_remove = prop_remove;
     this.prop_add = prop_add;
   }
@@ -1782,19 +1794,41 @@ var ModTree = class extends CustomType {
     this.children = children;
   }
 };
-function on(event_type, msg) {
-  return new Event(event_type, msg);
-}
 function on_input(msg) {
   return new EventFun("input", msg);
 }
-function onclick(msg) {
-  return on("click", msg);
+function contains_prop_name(lst, item) {
+  return fold_until(
+    lst,
+    false,
+    (acc, i) => {
+      let _block;
+      if (i instanceof Prop) {
+        let name = i.name;
+        _block = name === item.name;
+      } else if (i instanceof Event) {
+        let name = i.name;
+        _block = name === item.name;
+      } else {
+        let name = i.name;
+        _block = name === item.name;
+      }
+      let result = _block;
+      if (result) {
+        return new Stop(true);
+      } else {
+        return new Continue(false);
+      }
+    }
+  );
 }
 function remove_prop(old_prop, new_prop) {
-  return filter(old_prop, (x) => {
-    return !contains(new_prop, x);
-  });
+  return filter(
+    old_prop,
+    (x) => {
+      return !contains_prop_name(new_prop, x);
+    }
+  );
 }
 function set_prop(old_prop, new_prop) {
   return filter(new_prop, (x) => {
@@ -1813,7 +1847,7 @@ function diff_list(old, new$) {
       } else {
         let old_node = old.head;
         let rest = $;
-        return append(
+        return append2(
           toList([new ModTree(new Remove(old_node), toList([]))]),
           map(
             rest,
@@ -1832,7 +1866,7 @@ function diff_list(old, new$) {
     } else {
       let new_node = new$.head;
       let rest = $;
-      return append(
+      return append2(
         toList([new ModTree(new Create(new_node), toList([]))]),
         map(
           rest,
@@ -1857,7 +1891,7 @@ function diff_list(old, new$) {
         let rest_1 = $;
         let tree = diff_one(old_node, new_node);
         let other = diff_list(rest_1, rest_2);
-        return append(toList([tree]), other);
+        return append2(toList([tree]), other);
       }
     } else {
       let new_node = new$.head;
@@ -1866,7 +1900,7 @@ function diff_list(old, new$) {
       let rest_1 = $;
       let tree = diff_one(old_node, new_node);
       let other = diff_list(rest_1, rest_2);
-      return append(toList([tree]), other);
+      return append2(toList([tree]), other);
     }
   }
 }
@@ -1884,14 +1918,11 @@ function diff_one(old, new$) {
         let mod_children = diff_list(child_1, child_2);
         let prop_remove = remove_prop(prop_1, prop_2);
         let prop_set = set_prop(prop_1, prop_2);
-        let $1 = is_empty(prop_1) === is_empty(prop_2);
+        let $1 = is_empty(prop_remove) === is_empty(prop_set);
         if ($1) {
           return new ModTree(new Nop(), mod_children);
         } else {
-          return new ModTree(
-            new Modify(new$, prop_remove, prop_set),
-            mod_children
-          );
+          return new ModTree(new Modify(prop_remove, prop_set), mod_children);
         }
       } else {
         return new ModTree(new Replace(new$), toList([]));
@@ -1930,13 +1961,13 @@ function set_attribute_type(ele, props) {
         let name = first2.name;
         let args = first2.args;
         set_element_event_prop(ele, args);
-        echo(args, "src\\vdom\\dom_ffi.gleam", 82);
+        echo(args, "src\\vdom\\dom_ffi.gleam", 85);
         return toList([name]);
       } else {
         let name = first2.name;
         let func = first2.args;
         set_element_event_prop(ele, func);
-        echo(func, "src\\vdom\\dom_ffi.gleam", 87);
+        echo(func, "src\\vdom\\dom_ffi.gleam", 90);
         return toList([name]);
       }
     } else {
@@ -1957,11 +1988,11 @@ function set_attribute_type(ele, props) {
         let name = first2.name;
         let func = first2.args;
         set_element_event_prop(ele, func);
-        echo(func, "src\\vdom\\dom_ffi.gleam", 104);
+        echo(func, "src\\vdom\\dom_ffi.gleam", 107);
         _block = toList([name]);
       }
       let lst = _block;
-      return append(lst, set_attribute_type(ele, rest));
+      return append2(lst, set_attribute_type(ele, rest));
     }
   }
 }
@@ -2164,40 +2195,32 @@ function text(content) {
 function div(props, children) {
   return new HTMLTag("div", props, children);
 }
-function button(props, children) {
-  return new HTMLTag(
-    "button",
-    append(props, toList([new Prop("type", "button")])),
-    children
-  );
-}
-function li(content, props) {
-  return new HTMLTag("li", props, content);
-}
-function ul(items, props) {
-  return new HTMLTag("ul", props, items);
-}
 
 // build/dev/javascript/vdom/vdom.mjs
-var ChangeInput = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var AddItem = class extends CustomType {
-};
-var RemoveItem = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
 var State = class extends CustomType {
-  constructor(items, input_content) {
+  constructor(name, password, password_again) {
     super();
-    this.items = items;
-    this.input_content = input_content;
+    this.name = name;
+    this.password = password;
+    this.password_again = password_again;
+  }
+};
+var Name = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var Password = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var PasswordAgain = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
   }
 };
 function modify_dom(ele, prop_remove, prop_add) {
@@ -2242,99 +2265,79 @@ function replace_from_dom(root, element) {
     return set_element_text(root, content);
   }
 }
-function diff_one_proxy(old, new$) {
-  return diff_one(old, new$);
-}
-function index_filter(list2, with_fun) {
-  let result = fold(
-    list2,
-    [0, toList([])],
-    (acc, item) => {
-      let next = acc[0] + 1;
-      let $ = with_fun(item, acc[0]);
-      if ($) {
-        return [next, append(acc[1], toList([item]))];
-      } else {
-        return [next, acc[1]];
-      }
-    }
-  );
-  return result[1];
-}
 function update(msg, s) {
-  if (msg instanceof ChangeInput) {
-    let msg$1 = msg[0];
-    return new State(s.items, msg$1);
-  } else if (msg instanceof AddItem) {
-    let new_list = append(s.items, toList([s.input_content]));
-    echo2(new_list, "src\\vdom.gleam", 245);
-    return new State(new_list, s.input_content);
+  if (msg instanceof Name) {
+    let val = msg[0];
+    return new State(val, s.password, s.password_again);
+  } else if (msg instanceof Password) {
+    let val = msg[0];
+    return new State(s.name, val, s.password_again);
   } else {
-    let postion = msg[0];
-    return new State(
-      index_filter(s.items, (_, index3) => {
-        return postion !== index3;
-      }),
-      s.input_content
+    let val = msg[0];
+    return new State(s.name, s.password, val);
+  }
+}
+function validation_view(s) {
+  let $ = s.password === s.password_again;
+  if ($) {
+    return div(
+      toList([new Prop("style", "color: green")]),
+      toList([text("Ok")])
+    );
+  } else {
+    return div(
+      toList([new Prop("style", "color: red")]),
+      toList([text("Password do not match")])
     );
   }
 }
-function input_view(s) {
+function main_view(s) {
   return div(
     toList([]),
     toList([
       new HTMLTag(
         "input",
         toList([
-          new Prop("type", "text"),
-          new Prop("value", s.input_content),
+          new Prop("placeholder", "Name"),
+          new Prop("value", s.name),
           on_input((var0) => {
-            return new ChangeInput(var0);
+            return new Name(var0);
           })
         ]),
         toList([])
       ),
-      button(
-        toList([onclick(new AddItem())]),
-        toList([new TextNode("Add to list")])
-      )
+      new HTMLTag(
+        "input",
+        toList([
+          new Prop("placeholder", "Password"),
+          new Prop("value", s.password),
+          on_input((var0) => {
+            return new Password(var0);
+          })
+        ]),
+        toList([])
+      ),
+      new HTMLTag(
+        "input",
+        toList([
+          new Prop("placeholder", "Re-Enter Password"),
+          new Prop("value", s.password_again),
+          on_input((var0) => {
+            return new PasswordAgain(var0);
+          })
+        ]),
+        toList([])
+      ),
+      validation_view(s)
     ])
   );
-}
-function list_item(item, index3) {
-  return li(
-    toList([
-      div(
-        toList([]),
-        toList([
-          new TextNode(item),
-          button(
-            toList([onclick(new RemoveItem(index3))]),
-            toList([text("Remove")])
-          )
-        ])
-      )
-    ]),
-    toList([])
-  );
-}
-function list_view(s) {
-  let list_items = index_map(
-    s.items,
-    (item, index3) => {
-      return list_item(item, index3);
-    }
-  );
-  return ul(list_items, toList([]));
-}
-function main_view(s) {
-  return div(toList([]), toList([input_view(s), list_view(s)]));
 }
 function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
   while (true) {
     let parent = loop$parent;
     let elements = loop$elements;
     let tree = loop$tree;
+    echo2(tree, "src\\vdom.gleam", 84);
     if (tree instanceof Empty) {
       if (elements instanceof Empty) {
         return void 0;
@@ -2358,7 +2361,6 @@ function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
         let tree$1 = tree.head;
         let rest = $;
         log_element("parent: ", parent);
-        echo2(tree$1, "src\\vdom.gleam", 119);
         parse_dom_tree(parent, tree$1);
         return each(rest, (x) => {
           return parse_dom_tree(parent, x);
@@ -2372,14 +2374,12 @@ function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
           let tree$1 = tree.head;
           let ele = elements.head;
           log_element("current: ", ele);
-          echo2(tree$1, "src\\vdom.gleam", 91);
           return parse_dom_tree(ele, tree$1);
         } else {
           let tree_op = tree.head;
           let rest = $1;
           let ele = elements.head;
           log_element("current: ", ele);
-          echo2(tree_op, "src\\vdom.gleam", 96);
           parse_dom_tree(ele, tree_op);
           return each(rest, (x) => {
             return parse_dom_tree(parent, x);
@@ -2392,7 +2392,6 @@ function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
           let ele = elements.head;
           let siblings = $;
           log_element("current: ", ele);
-          echo2(tree_op, "src\\vdom.gleam", 102);
           return parse_dom_tree(ele, tree_op);
         } else {
           let tree_op = tree.head;
@@ -2400,7 +2399,6 @@ function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
           let ele = elements.head;
           let siblings = $;
           log_element("parent: ", ele);
-          echo2(tree_op, "src\\vdom.gleam", 111);
           parse_dom_tree(ele, tree_op);
           loop$parent = parent;
           loop$elements = siblings;
@@ -2413,41 +2411,32 @@ function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
 function parse_dom_tree(ele, tree) {
   let $ = tree.diff_op;
   if ($ instanceof Nop) {
-    print("No Op moving to Children");
-    let child_elements = get_children(ele);
+    let child_elements = get_child_nodes(ele);
     apply_to_modtree_list(ele, child_elements, tree.children);
     return void 0;
   } else if ($ instanceof Create) {
     let dom = $[0];
-    print("creating element");
-    echo2(dom, "src\\vdom.gleam", 55);
     log_element("create parent: ", ele);
     return yet_another_create_elements(ele, dom);
   } else if ($ instanceof Remove) {
     let dom = $[0];
-    print("Removing Dom");
-    echo2(dom, "src\\vdom.gleam", 61);
-    print("I have no idea w");
-    return remove_element(ele);
+    remove_element(ele);
+    return console_log("Done removing them");
   } else if ($ instanceof Replace) {
     let dom = $[0];
     print("Replacing Dom");
-    echo2(dom, "src\\vdom.gleam", 67);
     return replace_from_dom(ele, dom);
   } else {
     let prop_remove = $.prop_remove;
     let prop_set = $.prop_add;
     print("Modifying props");
-    echo2(toList([prop_remove, prop_set]), "src\\vdom.gleam", 72);
     modify_dom(ele, prop_remove, prop_set);
-    let child_elements = get_children(ele);
-    echo2(child_elements, "src\\vdom.gleam", 75);
-    echo2(tree.children, "src\\vdom.gleam", 76);
+    let child_elements = get_child_nodes(ele);
     return apply_to_modtree_list(ele, child_elements, tree.children);
   }
 }
 function apply_to_dom(root, tree) {
-  let children = get_children(root);
+  let children = get_child_nodes(root);
   let $ = first(children);
   if ($ instanceof Ok) {
     let ele = $[0];
@@ -2457,7 +2446,7 @@ function apply_to_dom(root, tree) {
   }
 }
 function apply_dom_from_root(root, tree) {
-  let children = get_children(root);
+  let children = get_child_nodes(root);
   if (children instanceof Empty) {
     return void 0;
   } else {
@@ -2479,13 +2468,13 @@ function create_element_from_list_vdom(root, v_elements, curr_event) {
     if ($ instanceof Empty) {
       let element = v_elements.head;
       let values2 = create_element_from_vhtml(root, element);
-      return append(values2[1], curr_event);
+      return append2(values2[1], curr_event);
     } else {
       let element = v_elements.head;
       let rest = $;
       let values2 = create_element_from_vhtml(root, element);
       let rest_of_events = create_element_from_list_vdom(root, rest, values2[1]);
-      return append(rest_of_events, curr_event);
+      return append2(rest_of_events, curr_event);
     }
   }
 }
@@ -2502,7 +2491,7 @@ function create_element_from_vhtml(root, v_element) {
       children,
       toList([])
     );
-    return [new_element, append(other_events, event)];
+    return [new_element, append2(other_events, event)];
   } else {
     let content = v_element.content;
     set_element_text(root, content);
@@ -2514,7 +2503,7 @@ function inital_dom_apply(root, html) {
   return node_event_tuple[1];
 }
 function main() {
-  let init_state = new State(toList([]), " ");
+  let init_state = new State("", "", "");
   let $ = query_selector("#main");
   if ($ instanceof Ok) {
     let ele = $[0];
@@ -2689,24 +2678,20 @@ function echo$isDict2(value) {
   }
 }
 export {
-  AddItem,
-  ChangeInput,
-  RemoveItem,
+  Name,
+  Password,
+  PasswordAgain,
   State,
   apply_dom_from_root,
   apply_to_dom,
   apply_to_modtree_list,
   create_element_from_list_vdom,
   create_element_from_vhtml,
-  diff_one_proxy,
-  index_filter,
   inital_dom_apply,
-  input_view,
-  list_item,
-  list_view,
   main,
   main_view,
   modify_dom,
   replace_from_dom,
-  update
+  update,
+  validation_view
 };

@@ -15,7 +15,7 @@ pub fn inital_dom_apply(
 }
 
 pub fn apply_dom_from_root(root: dom_ffi.DomElement, tree: v_dom.ModTree(msg)) {
-  let children = dom_ffi.get_children(root)
+  let children = dom_ffi.get_child_nodes(root)
 
   case children {
     [] -> Nil
@@ -28,13 +28,12 @@ pub fn apply_dom_from_root(root: dom_ffi.DomElement, tree: v_dom.ModTree(msg)) {
 
 pub fn apply_to_dom(root: dom_ffi.DomElement, tree: v_dom.ModTree(msg)) -> Nil {
   // Apply changes to the real dom 
-  let children = dom_ffi.get_children(root)
+  let children = dom_ffi.get_child_nodes(root)
 
   case list.first(children) {
     Error(_) -> Nil
     Ok(ele) -> {
       parse_dom_tree(ele, tree)
-     
     }
   }
 }
@@ -43,35 +42,35 @@ fn parse_dom_tree(ele: dom_ffi.DomElement, tree: v_dom.ModTree(msg)) {
   case tree.diff_op {
     v_dom.Nop -> {
       // do nothing but go deeper into the tree
-      io.print("No Op moving to Children")
-      let child_elements = dom_ffi.get_children(ele)
+      //io.print("No Op moving to Children")
+      let child_elements = dom_ffi.get_child_nodes(ele)
       apply_to_modtree_list(ele, child_elements, tree.children)
       Nil
-    
     }
     v_dom.Create(dom) -> {
-      io.print("creating element")
-      echo dom 
+      //io.print("creating element")
+      //echo dom 
       dom_ffi.log_element("create parent: ", ele)
       yet_another_create_elements(ele, dom)
     }
     v_dom.Remove(dom) -> {
-      io.print("Removing Dom")
-      echo dom 
+      //io.print("Removing Dom")
+      //echo dom 
       dom_ffi.remove_element(ele)
+      io.println("Done removing them")
     }
     v_dom.Replace(dom) -> {
       io.print("Replacing Dom")
-      echo dom 
+      //echo dom 
       replace_from_dom(ele, dom)
     }
-    v_dom.Modify(_, prop_remove, prop_set) -> {
+    v_dom.Modify(prop_remove, prop_set) -> {
       io.print("Modifying props")
-      echo [prop_remove, prop_set] 
+      //echo [prop_remove, prop_set] 
       modify_dom(ele, prop_remove, prop_set)
-      let child_elements = dom_ffi.get_children(ele)
-      echo child_elements
-      echo tree.children
+      let child_elements = dom_ffi.get_child_nodes(ele)
+      //echo child_elements
+      //echo tree.children
       apply_to_modtree_list(ele, child_elements, tree.children)
     }
   }
@@ -82,22 +81,23 @@ pub fn apply_to_modtree_list(
   elements: List(dom_ffi.DomElement),
   tree: List(v_dom.ModTree(msg)),
 ) {
+  echo tree
   case elements, tree {
     [], [] -> Nil
     [ele], [tree] -> {
       dom_ffi.log_element("current: ", ele)
-      echo tree 
+      //echo tree 
       parse_dom_tree(ele, tree)
-      }
+    }
     [ele], [tree_op, ..rest] -> {
       dom_ffi.log_element("current: ", ele)
-      echo tree_op 
+      //echo tree_op 
       parse_dom_tree(ele, tree_op)
-      list.each(rest, fn(x){parse_dom_tree(parent, x)}) 
+      list.each(rest, fn(x) { parse_dom_tree(parent, x) })
     }
-    [ele, ..siblings], [tree_op] ->{
+    [ele, ..siblings], [tree_op] -> {
       dom_ffi.log_element("current: ", ele)
-      echo tree_op 
+      //echo tree_op 
       parse_dom_tree(ele, tree_op)
       // should delete the other children, will implement that later
     }
@@ -106,20 +106,20 @@ pub fn apply_to_modtree_list(
       //echo ele 
       //echo tree_op
       dom_ffi.log_element("parent: ", ele)
-      echo tree_op 
+      //echo tree_op 
       parse_dom_tree(ele, tree_op)
       apply_to_modtree_list(parent, siblings, op_rest)
     }
-    
+
     [], [tree] -> parse_dom_tree(parent, tree)
     [], [tree, ..rest] -> {
       dom_ffi.log_element("parent: ", parent)
-      echo tree 
-     parse_dom_tree(parent, tree)
-     list.each(rest, fn(x){parse_dom_tree(parent, x)}) 
+      //echo tree 
+      parse_dom_tree(parent, tree)
+      list.each(rest, fn(x) { parse_dom_tree(parent, x) })
     }
     [ele], [] -> Nil
-    [ele, ..siblings], [] -> Nil 
+    [ele, ..siblings], [] -> Nil
   }
 }
 
@@ -204,92 +204,43 @@ pub fn create_element_from_list_vdom(
   }
 }
 
-pub fn diff_one_proxy(old: v_dom.Html(msg), new: v_dom.Html(msg)) {
-  v_dom.diff_one(old, new)
-}
-
-pub type Msg {
-  ChangeInput(String)
-  // current value of Input
-  AddItem
-  RemoveItem(Int)
-}
 
 pub type State {
-  State(items: List(String), input_content: String)
-}
-
-
-pub fn index_filter(
-  list: List(a), 
-  with_fun: fn(a, Int)->Bool)
-  -> List(a){
-
-let result = list.fold(list, #(0, []), fn(acc, item){
-  let next = acc.0 + 1
-  case with_fun(item, acc.0){
-    True -> #(next ,list.append(acc.1, [item]))
-    False ->  #(next , acc.1)
+  State(name: String, password: String, password_again: String)
   }
-})
-  result.1
 
+pub type Msg {
+  Name(String)
+  Password(String)
+  PasswordAgain(String)
 }
 
-pub fn update(msg: Msg, s: State) -> State {
-  case msg {
-    AddItem -> {
-      let new_list = list.append(s.items, [s.input_content])
-      echo new_list
-      State(new_list, s.input_content)
-      }
-    RemoveItem(postion) ->
-      State(index_filter(s.items, fn(_, index) { postion != index }), s.input_content)
-    ChangeInput(msg) -> State(s.items, msg)
+pub fn update(msg: Msg, s: State)->State{
+  case msg{
+    Name(val) -> State(val, s.password, s.password_again)
+    Password(val) -> State(s.name, val, s.password_again)
+    PasswordAgain(val) -> State(s.name, s.password, val)
   }
-}
-
-pub fn input_view(s: State) -> v_dom.Html(Msg) {
-  h.div([], [
-    v_dom.HTMLTag(
-      "input",
-      [
-        v_dom.Prop("type", "text"),
-        v_dom.Prop("value", s.input_content),
-        v_dom.on_input(ChangeInput),
-      ],
-      [],
-    ),
-    h.button([v_dom.onclick(AddItem)], [
-      v_dom.TextNode("Add to list"),
-    ]),
-  ])
-}
-
-pub fn list_view(s: State) -> v_dom.Html(Msg) {
-  let list_items = list.index_map(s.items, fn(item, index){list_item(item, index)})
-  h.ul(list_items, [])
-}
-
-
-pub fn list_item(item: String, index: Int) -> v_dom.Html(Msg) {
-
-  h.li([
-    h.div([],
-    [v_dom.TextNode(item), 
-    h.button([v_dom.onclick(RemoveItem(index))], [h.text("Remove")])
-    ]
-    )
-   ], 
-    []) 
 }
 
 pub fn main_view(s: State) -> v_dom.Html(Msg) {
-  h.div([], [input_view(s), list_view(s)])
+  h.div([], [
+    v_dom.HTMLTag("input", [v_dom.Prop("placeholder", "Name"), v_dom.Prop("value", s.name),  v_dom.on_input(Name)], []),
+    v_dom.HTMLTag("input", [v_dom.Prop("placeholder", "Password"), v_dom.Prop("value", s.password),  v_dom.on_input(Password)], []),
+    v_dom.HTMLTag("input", [v_dom.Prop("placeholder", "Re-Enter Password"), v_dom.Prop("value", s.password_again),  v_dom.on_input(PasswordAgain)], []),
+    validation_view(s)
+  ])
+}
+
+pub fn validation_view(s: State){
+  case s.password == s.password_again{
+    True -> h.div([v_dom.Prop("style", "color: green")], [h.text("Ok")], )
+    False ->  h.div([v_dom.Prop("style", "color: red")], [h.text("Password do not match")])
+  }
 }
 
 pub fn main() -> Nil {
-  let init_state = State([], " ")
+  let init_state = State("", "", "")
 
   case dom_ffi.query_selector("#main") {
     Ok(ele) -> {
