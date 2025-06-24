@@ -69,7 +69,7 @@ pub fn extract_all_events(root: Html(msg))-> List(Attribute(msg)){
 
 
 fn contains_prop_name(lst: List(Attribute(msg)), item: Attribute(msg))-> Bool{
-  list.fold_until(lst, False, fn(acc, i){
+  list.fold_until(lst, False, fn(_, i){
     let result = case i {
       Prop(name, _) -> name == item.name 
       Event(name, _) -> name == item.name 

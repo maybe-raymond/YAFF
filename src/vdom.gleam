@@ -118,8 +118,8 @@ pub fn apply_to_modtree_list(
       parse_dom_tree(parent, tree)
       list.each(rest, fn(x) { parse_dom_tree(parent, x) })
     }
-    [ele], [] -> Nil
-    [ele, ..siblings], [] -> Nil
+    [_], [] -> Nil
+    [_, ..], [] -> Nil
   }
 }
 

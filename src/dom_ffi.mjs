@@ -117,7 +117,6 @@ export function get_child_nodes(element){
 
 class HandleInputEvent{
     constructor(root, update, view, diff_one, apply_dom){
-        this.Data_map = new Map() // keeps tract of an element and its string content
         this.root = root 
         this.update = update
         this.view = view 
@@ -126,38 +125,20 @@ class HandleInputEvent{
     }
 
     run(event, state, current_view){
-        console.log("input")
-        let current_data = ""
-        if (this.Data_map.has(event.target)){
-            current_data = this.Data_map.get(event.target)
-        } 
-        else{
-            this.Data_map.set(event.target, "")
-        }
+        let current_data = event.target.value
+        
+        let arg = event.target["event_msg"](current_data)
+        let new_state = this.update(arg, state)
+        let new_html = this.view(new_state)
+        let mod_tree = this.diff_one(current_view, new_html)
+        //console.log(mod_tree)
 
-       if(event.inputType.includes("insert")){
-        current_data  = current_data + event.data
-       } 
-       else if(event.inputType.includes("delete")){
-        let new_string = current_data.split("") // getting rid of the last string
-        new_string.pop()
-        current_data  = new_string.join("")
-       }
+        window.requestAnimationFrame(() => {
+            this.apply_dom(this.root, mod_tree)
 
-       this.Data_map.set(event.target, current_data)
-
-       let arg = event.target["event_msg"](current_data)
-            let new_state = this.update(arg, state)
-            let new_html = this.view(new_state)
-            let mod_tree = this.diff_one(current_view, new_html)
-            //console.log(mod_tree)
-
-            window.requestAnimationFrame(() => {
-                this.apply_dom(this.root, mod_tree)
-
-            })
+        })
             
-            return [new_state, new_html]
+        return [new_state, new_html]
     }
 }
 

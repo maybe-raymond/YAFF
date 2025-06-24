@@ -1659,21 +1659,7 @@ var HandleInputEvent = class {
     this.diff_one = diff_one2;
   }
   run(event, state, current_view) {
-    console.log("input");
-    let current_data = "";
-    if (this.Data_map.has(event.target)) {
-      current_data = this.Data_map.get(event.target);
-    } else {
-      this.Data_map.set(event.target, "");
-    }
-    if (event.inputType.includes("insert")) {
-      current_data = current_data + event.data;
-    } else if (event.inputType.includes("delete")) {
-      let new_string = current_data.split("");
-      new_string.pop();
-      current_data = new_string.join("");
-    }
-    this.Data_map.set(event.target, current_data);
+    let current_data = event.target.value;
     let arg = event.target["event_msg"](current_data);
     let new_state = this.update(arg, state);
     let new_html = this.view(new_state);
@@ -1801,7 +1787,7 @@ function contains_prop_name(lst, item) {
   return fold_until(
     lst,
     false,
-    (acc, i) => {
+    (_, i) => {
       let _block;
       if (i instanceof Prop) {
         let name = i.name;
@@ -2344,11 +2330,8 @@ function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
       } else {
         let $ = elements.tail;
         if ($ instanceof Empty) {
-          let ele = elements.head;
           return void 0;
         } else {
-          let ele = elements.head;
-          let siblings = $;
           return void 0;
         }
       }

@@ -17,5 +17,10 @@ eventListeners.
 ## Fix on change
 I created a qucik function allow on chang input and really did not create a robust version that works on different types of text input
 
+
+## Remove event Listeners when they do not exist
+They are cases where the event listern stops existing  on an object and it needs to be removed on the global event lister group
+
+
 ## Bug for Input 
 When a new input value is done, it uses the same buffer, need to create different buffere for different targets. 
