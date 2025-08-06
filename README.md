@@ -1,4 +1,4 @@
-# vdom
+# Vdom
 
 [![Package Version](https://img.shields.io/hexpm/v/vdom)](https://hex.pm/packages/vdom)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/vdom/)
