@@ -85,7 +85,7 @@ pub fn set_attribute_type(
           echo args
           [name]
         }
-        v_dom.EventFun(name, func) ->{
+        v_dom.EventFun(name, func) -> {
           set_element_event_prop(ele, func)
           echo func
           [name]
@@ -102,7 +102,7 @@ pub fn set_attribute_type(
           set_element_event_prop(ele, args)
           [name]
         }
-          v_dom.EventFun(name, func) ->{
+        v_dom.EventFun(name, func) -> {
           set_element_event_prop(ele, func)
           echo func
           [name]

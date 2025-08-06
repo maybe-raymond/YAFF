@@ -274,18 +274,18 @@ function bitArrayPrintDeprecationWarning(name, message) {
   );
   isBitArrayDeprecationMessagePrinted[name] = true;
 }
-function bitArraySlice(bitArray, start, end) {
+function bitArraySlice(bitArray, start2, end) {
   end ??= bitArray.bitSize;
-  bitArrayValidateRange(bitArray, start, end);
-  if (start === end) {
+  bitArrayValidateRange(bitArray, start2, end);
+  if (start2 === end) {
     return new BitArray(new Uint8Array());
   }
-  if (start === 0 && end === bitArray.bitSize) {
+  if (start2 === 0 && end === bitArray.bitSize) {
     return bitArray;
   }
-  start += bitArray.bitOffset;
+  start2 += bitArray.bitOffset;
   end += bitArray.bitOffset;
-  const startByteIndex = Math.trunc(start / 8);
+  const startByteIndex = Math.trunc(start2 / 8);
   const endByteIndex = Math.trunc((end + 7) / 8);
   const byteLength = endByteIndex - startByteIndex;
   let buffer;
@@ -298,31 +298,31 @@ function bitArraySlice(bitArray, start, end) {
       byteLength
     );
   }
-  return new BitArray(buffer, end - start, start % 8);
+  return new BitArray(buffer, end - start2, start2 % 8);
 }
-function bitArraySliceToInt(bitArray, start, end, isBigEndian, isSigned) {
-  bitArrayValidateRange(bitArray, start, end);
-  if (start === end) {
+function bitArraySliceToInt(bitArray, start2, end, isBigEndian, isSigned) {
+  bitArrayValidateRange(bitArray, start2, end);
+  if (start2 === end) {
     return 0;
   }
-  start += bitArray.bitOffset;
+  start2 += bitArray.bitOffset;
   end += bitArray.bitOffset;
-  const isStartByteAligned = start % 8 === 0;
+  const isStartByteAligned = start2 % 8 === 0;
   const isEndByteAligned = end % 8 === 0;
   if (isStartByteAligned && isEndByteAligned) {
     return intFromAlignedSlice(
       bitArray,
-      start / 8,
+      start2 / 8,
       end / 8,
       isBigEndian,
       isSigned
     );
   }
-  const size = end - start;
-  const startByteIndex = Math.trunc(start / 8);
+  const size = end - start2;
+  const startByteIndex = Math.trunc(start2 / 8);
   const endByteIndex = Math.trunc((end - 1) / 8);
   if (startByteIndex == endByteIndex) {
-    const mask2 = 255 >> start % 8;
+    const mask2 = 255 >> start2 % 8;
     const unusedLowBitCount = (8 - end % 8) % 8;
     let value = (bitArray.rawBuffer[startByteIndex] & mask2) >> unusedLowBitCount;
     if (isSigned) {
@@ -336,7 +336,7 @@ function bitArraySliceToInt(bitArray, start, end, isBigEndian, isSigned) {
   if (size <= 53) {
     return intFromUnalignedSliceUsingNumber(
       bitArray.rawBuffer,
-      start,
+      start2,
       end,
       isBigEndian,
       isSigned
@@ -344,19 +344,19 @@ function bitArraySliceToInt(bitArray, start, end, isBigEndian, isSigned) {
   } else {
     return intFromUnalignedSliceUsingBigInt(
       bitArray.rawBuffer,
-      start,
+      start2,
       end,
       isBigEndian,
       isSigned
     );
   }
 }
-function intFromAlignedSlice(bitArray, start, end, isBigEndian, isSigned) {
-  const byteSize = end - start;
+function intFromAlignedSlice(bitArray, start2, end, isBigEndian, isSigned) {
+  const byteSize = end - start2;
   if (byteSize <= 6) {
     return intFromAlignedSliceUsingNumber(
       bitArray.rawBuffer,
-      start,
+      start2,
       end,
       isBigEndian,
       isSigned
@@ -364,23 +364,23 @@ function intFromAlignedSlice(bitArray, start, end, isBigEndian, isSigned) {
   } else {
     return intFromAlignedSliceUsingBigInt(
       bitArray.rawBuffer,
-      start,
+      start2,
       end,
       isBigEndian,
       isSigned
     );
   }
 }
-function intFromAlignedSliceUsingNumber(buffer, start, end, isBigEndian, isSigned) {
-  const byteSize = end - start;
+function intFromAlignedSliceUsingNumber(buffer, start2, end, isBigEndian, isSigned) {
+  const byteSize = end - start2;
   let value = 0;
   if (isBigEndian) {
-    for (let i = start; i < end; i++) {
+    for (let i = start2; i < end; i++) {
       value *= 256;
       value += buffer[i];
     }
   } else {
-    for (let i = end - 1; i >= start; i--) {
+    for (let i = end - 1; i >= start2; i--) {
       value *= 256;
       value += buffer[i];
     }
@@ -393,16 +393,16 @@ function intFromAlignedSliceUsingNumber(buffer, start, end, isBigEndian, isSigne
   }
   return value;
 }
-function intFromAlignedSliceUsingBigInt(buffer, start, end, isBigEndian, isSigned) {
-  const byteSize = end - start;
+function intFromAlignedSliceUsingBigInt(buffer, start2, end, isBigEndian, isSigned) {
+  const byteSize = end - start2;
   let value = 0n;
   if (isBigEndian) {
-    for (let i = start; i < end; i++) {
+    for (let i = start2; i < end; i++) {
       value *= 256n;
       value += BigInt(buffer[i]);
     }
   } else {
-    for (let i = end - 1; i >= start; i--) {
+    for (let i = end - 1; i >= start2; i--) {
       value *= 256n;
       value += BigInt(buffer[i]);
     }
@@ -415,14 +415,14 @@ function intFromAlignedSliceUsingBigInt(buffer, start, end, isBigEndian, isSigne
   }
   return Number(value);
 }
-function intFromUnalignedSliceUsingNumber(buffer, start, end, isBigEndian, isSigned) {
-  const isStartByteAligned = start % 8 === 0;
-  let size = end - start;
-  let byteIndex = Math.trunc(start / 8);
+function intFromUnalignedSliceUsingNumber(buffer, start2, end, isBigEndian, isSigned) {
+  const isStartByteAligned = start2 % 8 === 0;
+  let size = end - start2;
+  let byteIndex = Math.trunc(start2 / 8);
   let value = 0;
   if (isBigEndian) {
     if (!isStartByteAligned) {
-      const leadingBitsCount = 8 - start % 8;
+      const leadingBitsCount = 8 - start2 % 8;
       value = buffer[byteIndex++] & (1 << leadingBitsCount) - 1;
       size -= leadingBitsCount;
     }
@@ -437,7 +437,7 @@ function intFromUnalignedSliceUsingNumber(buffer, start, end, isBigEndian, isSig
     }
   } else {
     if (isStartByteAligned) {
-      let size2 = end - start;
+      let size2 = end - start2;
       let scale = 1;
       while (size2 >= 8) {
         value += buffer[byteIndex++] * scale;
@@ -446,9 +446,9 @@ function intFromUnalignedSliceUsingNumber(buffer, start, end, isBigEndian, isSig
       }
       value += (buffer[byteIndex] >> 8 - size2) * scale;
     } else {
-      const highBitsCount = start % 8;
+      const highBitsCount = start2 % 8;
       const lowBitsCount = 8 - highBitsCount;
-      let size2 = end - start;
+      let size2 = end - start2;
       let scale = 1;
       while (size2 >= 8) {
         const byte = buffer[byteIndex] << highBitsCount | buffer[byteIndex + 1] >> lowBitsCount;
@@ -470,21 +470,21 @@ function intFromUnalignedSliceUsingNumber(buffer, start, end, isBigEndian, isSig
     }
   }
   if (isSigned) {
-    const highBit = 2 ** (end - start - 1);
+    const highBit = 2 ** (end - start2 - 1);
     if (value >= highBit) {
       value -= highBit * 2;
     }
   }
   return value;
 }
-function intFromUnalignedSliceUsingBigInt(buffer, start, end, isBigEndian, isSigned) {
-  const isStartByteAligned = start % 8 === 0;
-  let size = end - start;
-  let byteIndex = Math.trunc(start / 8);
+function intFromUnalignedSliceUsingBigInt(buffer, start2, end, isBigEndian, isSigned) {
+  const isStartByteAligned = start2 % 8 === 0;
+  let size = end - start2;
+  let byteIndex = Math.trunc(start2 / 8);
   let value = 0n;
   if (isBigEndian) {
     if (!isStartByteAligned) {
-      const leadingBitsCount = 8 - start % 8;
+      const leadingBitsCount = 8 - start2 % 8;
       value = BigInt(buffer[byteIndex++] & (1 << leadingBitsCount) - 1);
       size -= leadingBitsCount;
     }
@@ -499,7 +499,7 @@ function intFromUnalignedSliceUsingBigInt(buffer, start, end, isBigEndian, isSig
     }
   } else {
     if (isStartByteAligned) {
-      let size2 = end - start;
+      let size2 = end - start2;
       let shift = 0n;
       while (size2 >= 8) {
         value += BigInt(buffer[byteIndex++]) << shift;
@@ -508,9 +508,9 @@ function intFromUnalignedSliceUsingBigInt(buffer, start, end, isBigEndian, isSig
       }
       value += BigInt(buffer[byteIndex] >> 8 - size2) << shift;
     } else {
-      const highBitsCount = start % 8;
+      const highBitsCount = start2 % 8;
       const lowBitsCount = 8 - highBitsCount;
-      let size2 = end - start;
+      let size2 = end - start2;
       let shift = 0n;
       while (size2 >= 8) {
         const byte = buffer[byteIndex] << highBitsCount | buffer[byteIndex + 1] >> lowBitsCount;
@@ -532,16 +532,16 @@ function intFromUnalignedSliceUsingBigInt(buffer, start, end, isBigEndian, isSig
     }
   }
   if (isSigned) {
-    const highBit = 2n ** BigInt(end - start - 1);
+    const highBit = 2n ** BigInt(end - start2 - 1);
     if (value >= highBit) {
       value -= highBit * 2n;
     }
   }
   return Number(value);
 }
-function bitArrayValidateRange(bitArray, start, end) {
-  if (start < 0 || start > bitArray.bitSize || end < start || end > bitArray.bitSize) {
-    const msg = `Invalid bit array slice: start = ${start}, end = ${end}, bit size = ${bitArray.bitSize}`;
+function bitArrayValidateRange(bitArray, start2, end) {
+  if (start2 < 0 || start2 > bitArray.bitSize || end < start2 || end > bitArray.bitSize) {
+    const msg = `Invalid bit array slice: start = ${start2}, end = ${end}, bit size = ${bitArray.bitSize}`;
     throw new globalThis.Error(msg);
   }
 }
@@ -1651,7 +1651,6 @@ function get_child_nodes(element) {
 }
 var HandleInputEvent = class {
   constructor(root, update2, view, diff_one2, apply_dom) {
-    this.Data_map = /* @__PURE__ */ new Map();
     this.root = root;
     this.update = update2;
     this.view = view;
@@ -2174,41 +2173,7 @@ function echo$isDict(value) {
   }
 }
 
-// build/dev/javascript/vdom/vdom/html.mjs
-function text(content) {
-  return new TextNode(content);
-}
-function div(props, children) {
-  return new HTMLTag("div", props, children);
-}
-
-// build/dev/javascript/vdom/vdom.mjs
-var State = class extends CustomType {
-  constructor(name, password, password_again) {
-    super();
-    this.name = name;
-    this.password = password;
-    this.password_again = password_again;
-  }
-};
-var Name = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var Password = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var PasswordAgain = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
+// build/dev/javascript/vdom/vdom/mod_tree_parser.mjs
 function modify_dom(ele, prop_remove, prop_add) {
   set_attribute_type(ele, prop_add);
   return remove_attribute_type(ele, prop_remove);
@@ -2251,79 +2216,12 @@ function replace_from_dom(root, element) {
     return set_element_text(root, content);
   }
 }
-function update(msg, s) {
-  if (msg instanceof Name) {
-    let val = msg[0];
-    return new State(val, s.password, s.password_again);
-  } else if (msg instanceof Password) {
-    let val = msg[0];
-    return new State(s.name, val, s.password_again);
-  } else {
-    let val = msg[0];
-    return new State(s.name, s.password, val);
-  }
-}
-function validation_view(s) {
-  let $ = s.password === s.password_again;
-  if ($) {
-    return div(
-      toList([new Prop("style", "color: green")]),
-      toList([text("Ok")])
-    );
-  } else {
-    return div(
-      toList([new Prop("style", "color: red")]),
-      toList([text("Password do not match")])
-    );
-  }
-}
-function main_view(s) {
-  return div(
-    toList([]),
-    toList([
-      new HTMLTag(
-        "input",
-        toList([
-          new Prop("placeholder", "Name"),
-          new Prop("value", s.name),
-          on_input((var0) => {
-            return new Name(var0);
-          })
-        ]),
-        toList([])
-      ),
-      new HTMLTag(
-        "input",
-        toList([
-          new Prop("placeholder", "Password"),
-          new Prop("value", s.password),
-          on_input((var0) => {
-            return new Password(var0);
-          })
-        ]),
-        toList([])
-      ),
-      new HTMLTag(
-        "input",
-        toList([
-          new Prop("placeholder", "Re-Enter Password"),
-          new Prop("value", s.password_again),
-          on_input((var0) => {
-            return new PasswordAgain(var0);
-          })
-        ]),
-        toList([])
-      ),
-      validation_view(s)
-    ])
-  );
-}
 function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
   while (true) {
     let parent = loop$parent;
     let elements = loop$elements;
     let tree = loop$tree;
-    echo2(tree, "src\\vdom.gleam", 84);
+    echo2(tree, "src\\vdom\\mod_tree_parser.gleam", 84);
     if (tree instanceof Empty) {
       if (elements instanceof Empty) {
         return void 0;
@@ -2428,21 +2326,6 @@ function apply_to_dom(root, tree) {
     return void 0;
   }
 }
-function apply_dom_from_root(root, tree) {
-  let children = get_child_nodes(root);
-  if (children instanceof Empty) {
-    return void 0;
-  } else {
-    let $ = children.tail;
-    if ($ instanceof Empty) {
-      let ele = children.head;
-      return apply_to_dom(ele, tree);
-    } else {
-      let ele = children.head;
-      return apply_to_dom(ele, tree);
-    }
-  }
-}
 function create_element_from_list_vdom(root, v_elements, curr_event) {
   if (v_elements instanceof Empty) {
     return curr_event;
@@ -2484,27 +2367,6 @@ function create_element_from_vhtml(root, v_element) {
 function inital_dom_apply(root, html) {
   let node_event_tuple = create_element_from_vhtml(root, html);
   return node_event_tuple[1];
-}
-function main() {
-  let init_state = new State("", "", "");
-  let $ = query_selector("#main");
-  if ($ instanceof Ok) {
-    let ele = $[0];
-    print("Setting up event");
-    let current_view = main_view(init_state);
-    let events = unique(inital_dom_apply(ele, current_view));
-    return Browser_init_loop(
-      init_state,
-      update,
-      main_view,
-      ele,
-      events,
-      diff_one,
-      apply_to_dom
-    );
-  } else {
-    return print_error("No element called #main found");
-  }
 }
 function echo2(value, file, line) {
   const grey = "\x1B[90m";
@@ -2660,21 +2522,146 @@ function echo$isDict2(value) {
     return false;
   }
 }
+
+// build/dev/javascript/vdom/vdom/browser.mjs
+function simple(model, update2, view) {
+  return [model, update2, view];
+}
+function start(app, element) {
+  let $ = query_selector(element);
+  if ($ instanceof Ok) {
+    let ele = $[0];
+    print("Setting up event");
+    let current_view = app[2](app[0]);
+    let events = unique(inital_dom_apply(ele, current_view));
+    return Browser_init_loop(
+      app[0],
+      app[1],
+      app[2],
+      ele,
+      events,
+      diff_one,
+      apply_to_dom
+    );
+  } else {
+    return print_error("No element called #main found");
+  }
+}
+
+// build/dev/javascript/vdom/vdom/html.mjs
+function text(content) {
+  return new TextNode(content);
+}
+function div(props, children) {
+  return new HTMLTag("div", props, children);
+}
+
+// build/dev/javascript/vdom/vdom.mjs
+var State = class extends CustomType {
+  constructor(name, password, password_again) {
+    super();
+    this.name = name;
+    this.password = password;
+    this.password_again = password_again;
+  }
+};
+var Name = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var Password = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var PasswordAgain = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+function update(msg, s) {
+  if (msg instanceof Name) {
+    let val = msg[0];
+    return new State(val, s.password, s.password_again);
+  } else if (msg instanceof Password) {
+    let val = msg[0];
+    return new State(s.name, val, s.password_again);
+  } else {
+    let val = msg[0];
+    return new State(s.name, s.password, val);
+  }
+}
+function validation_view(s) {
+  let $ = s.password === s.password_again;
+  if ($) {
+    return div(
+      toList([new Prop("style", "color: green")]),
+      toList([text("Ok")])
+    );
+  } else {
+    return div(
+      toList([new Prop("style", "color: red")]),
+      toList([text("Password do not match")])
+    );
+  }
+}
+function main_view(s) {
+  return div(
+    toList([]),
+    toList([
+      new HTMLTag(
+        "input",
+        toList([
+          new Prop("placeholder", "Name"),
+          new Prop("value", s.name),
+          on_input((var0) => {
+            return new Name(var0);
+          })
+        ]),
+        toList([])
+      ),
+      new HTMLTag(
+        "input",
+        toList([
+          new Prop("placeholder", "Password"),
+          new Prop("value", s.password),
+          on_input((var0) => {
+            return new Password(var0);
+          })
+        ]),
+        toList([])
+      ),
+      new HTMLTag(
+        "input",
+        toList([
+          new Prop("placeholder", "Re-Enter Password"),
+          new Prop("value", s.password_again),
+          on_input((var0) => {
+            return new PasswordAgain(var0);
+          })
+        ]),
+        toList([])
+      ),
+      validation_view(s)
+    ])
+  );
+}
+function main() {
+  let init_state = new State("", "", "");
+  let app = simple(init_state, update, main_view);
+  return start(app, "#main");
+}
 export {
   Name,
   Password,
   PasswordAgain,
   State,
-  apply_dom_from_root,
-  apply_to_dom,
-  apply_to_modtree_list,
-  create_element_from_list_vdom,
-  create_element_from_vhtml,
-  inital_dom_apply,
   main,
   main_view,
-  modify_dom,
-  replace_from_dom,
   update,
   validation_view
 };
