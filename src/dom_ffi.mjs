@@ -94,10 +94,8 @@ export function append_element(parent, child){
     parent.appendChild(child)
 }
 
-export function set_element_event_prop(element, msg){
-    //Object.defineProperty(element, "event_msg", msg)
+export function set_element_event_prop(element, msg){    
     element["event_msg"] = msg 
-    //console.log(msg)
 }
 
 export function remove_element_event_prop(element, msg){
@@ -143,7 +141,7 @@ class HandleInputEvent{
 }
 
 
-class HandleClickEvent{
+class HandleEvent{
     constructor(root,update, view, diff_one, apply_dom){
         this.data = ""
         this.root = root 
@@ -155,11 +153,11 @@ class HandleClickEvent{
 
     run(event, state, current_view){
         let arg = event.target["event_msg"]
-        console.log("click")
+        //console.log("click")
         let new_state = this.update(arg, state)
         let new_html = this.view(new_state)
         let mod_tree = this.diff_one(current_view, new_html)
-        console.log(mod_tree)
+        //console.log(mod_tree)
         window.requestAnimationFrame(() => {
                 this.apply_dom(this.root, mod_tree)
 
@@ -170,35 +168,26 @@ class HandleClickEvent{
     }
 }
 
-export function Browser_init_loop(init_model, update, view, root, events, diff_one, apply_dom){
-// need to find when new type of event is added so that i can have a function to add it to the list 
 
+export function Browser_init_loop(init_model, update, view, root, get_events, diff_one, apply_dom){
 
-    console.log("Now runnig Browser")
+    let curr_state = init_model // current state
+    let curr_view = view(init_model) // current view
 
-        let curr_state = init_model // current state
-        let curr_view = view(init_model) // current view
+    let event_array = [...get_events(curr_view)]
 
-        //console.log({curr_state, curr_view})
-        let event_array = [...events]
-
-        //console.log(event_array)
-        event_array.forEach((name) => {
+    event_array.forEach((name) => {
             
-            let event_runner = (name == "input")? new HandleInputEvent(root, update, view, diff_one, apply_dom) : new HandleClickEvent(root, update, view, diff_one, apply_dom)
-       
+        let event_runner = (name === "input")? new HandleInputEvent(root, update, view, diff_one, apply_dom) : new HandleEvent(root, update, view, diff_one, apply_dom)
            
-            root.addEventListener(name, (event) => {
-                //console.log("clicked")
-                //console.log(event)
-                if (event.target && event.target["event_msg"]){
-                    let [new_state, new_view] = event_runner.run(event, curr_state, curr_view)
-                    console.log(new_state, new_view)
+        root.addEventListener(name, (event) => {
+            if (event.target && event.target["event_msg"]){
+                    
+                let [new_state, new_view] = event_runner.run(event, curr_state, curr_view)
                     curr_state = new_state
                     curr_view = new_view
-
                    
-                }
-                })
-            })
-        } 
+            }
+        })
+    })
+} 

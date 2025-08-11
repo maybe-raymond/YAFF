@@ -1,6 +1,3 @@
-import gleam/list
-import vdom/virtual_dom as v_dom
-
 pub type DomElement
 
 @external(javascript, "../dom_ffi.mjs", "query_selector")
@@ -60,79 +57,7 @@ pub fn browser_init_loop(
   update: func_1,
   view: func_2,
   root: DomElement,
-  events: List(String),
-  diff_one: func_3,
-  apply_dom: func_4,
+  events: func_3,
+  diff_one: func_4,
+  apply_dom: func_5,
 ) -> Nil
-
-// Wrappers for Attributes Events
-// These are helper functions to make an event and Addtriute different 
-
-pub fn set_attribute_type(
-  ele: DomElement,
-  props: List(v_dom.Attribute(msg)),
-) -> List(String) {
-  case props {
-    [] -> []
-    [first] -> {
-      case first {
-        v_dom.Prop(name, value) -> {
-          set_attribute(ele, #(name, value))
-          []
-        }
-        v_dom.Event(name, args) -> {
-          set_element_event_prop(ele, args)
-          echo args
-          [name]
-        }
-        v_dom.EventFun(name, func) -> {
-          set_element_event_prop(ele, func)
-          echo func
-          [name]
-        }
-      }
-    }
-    [first, ..rest] -> {
-      let lst = case first {
-        v_dom.Prop(name, value) -> {
-          set_attribute(ele, #(name, value))
-          []
-        }
-        v_dom.Event(name, args) -> {
-          set_element_event_prop(ele, args)
-          [name]
-        }
-        v_dom.EventFun(name, func) -> {
-          set_element_event_prop(ele, func)
-          echo func
-          [name]
-        }
-      }
-      list.append(lst, set_attribute_type(ele, rest))
-    }
-  }
-}
-
-pub fn remove_attribute_type(
-  ele: DomElement,
-  props: List(v_dom.Attribute(msg)),
-) -> Nil {
-  case props {
-    [] -> Nil
-    [first] -> {
-      case first {
-        v_dom.Prop(name, value) -> remove_attribute(ele, #(name, value))
-        v_dom.Event(_, _) -> remove_event_prop(ele)
-        v_dom.EventFun(_, _) -> remove_event_prop(ele)
-      }
-    }
-    [first, ..rest] -> {
-      case first {
-        v_dom.Prop(name, value) -> set_attribute(ele, #(name, value))
-        v_dom.Event(_, _) -> remove_event_prop(ele)
-        v_dom.EventFun(_, _) -> remove_event_prop(ele)
-      }
-      remove_attribute_type(ele, rest)
-    }
-  }
-}

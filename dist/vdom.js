@@ -1346,68 +1346,6 @@ var Dict = class _Dict {
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
 
-// build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
-var Nil = void 0;
-var NOT_FOUND = {};
-var unicode_whitespaces = [
-  " ",
-  // Space
-  "	",
-  // Horizontal tab
-  "\n",
-  // Line feed
-  "\v",
-  // Vertical tab
-  "\f",
-  // Form feed
-  "\r",
-  // Carriage return
-  "\x85",
-  // Next line
-  "\u2028",
-  // Line separator
-  "\u2029"
-  // Paragraph separator
-].join("");
-var trim_start_regex = /* @__PURE__ */ new RegExp(
-  `^[${unicode_whitespaces}]*`
-);
-var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
-function console_log(term) {
-  console.log(term);
-}
-function print(string2) {
-  if (typeof process === "object" && process.stdout?.write) {
-    process.stdout.write(string2);
-  } else if (typeof Deno === "object") {
-    Deno.stdout.writeSync(new TextEncoder().encode(string2));
-  } else {
-    console.log(string2);
-  }
-}
-function print_error(string2) {
-  if (typeof process === "object" && process.stderr?.write) {
-    process.stderr.write(string2);
-  } else if (typeof Deno === "object") {
-    Deno.stderr.writeSync(new TextEncoder().encode(string2));
-  } else {
-    console.error(string2);
-  }
-}
-function new_map() {
-  return Dict.new();
-}
-function map_get(map2, key) {
-  const value = map2.get(key, NOT_FOUND);
-  if (value === NOT_FOUND) {
-    return new Error(Nil);
-  }
-  return new Ok(value);
-}
-function map_insert(key, value, map2) {
-  return map2.set(key, value);
-}
-
 // build/dev/javascript/gleam_stdlib/gleam/dict.mjs
 function do_has_key(key, dict2) {
   return !isEqual(map_get(dict2, key), new Error(void 0));
@@ -1538,8 +1476,25 @@ function append_loop(loop$first, loop$second) {
     }
   }
 }
-function append2(first2, second) {
+function append(first2, second) {
   return append_loop(reverse(first2), second);
+}
+function flatten_loop(loop$lists, loop$acc) {
+  while (true) {
+    let lists = loop$lists;
+    let acc = loop$acc;
+    if (lists instanceof Empty) {
+      return reverse(acc);
+    } else {
+      let list2 = lists.head;
+      let further_lists = lists.tail;
+      loop$lists = further_lists;
+      loop$acc = reverse_and_prepend(list2, acc);
+    }
+  }
+}
+function flatten(lists) {
+  return flatten_loop(lists, toList([]));
 }
 function fold_until(loop$list, loop$initial, loop$fun) {
   while (true) {
@@ -1606,6 +1561,68 @@ function each(loop$list, loop$f) {
   }
 }
 
+// build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
+var Nil = void 0;
+var NOT_FOUND = {};
+function to_string(term) {
+  return term.toString();
+}
+var unicode_whitespaces = [
+  " ",
+  // Space
+  "	",
+  // Horizontal tab
+  "\n",
+  // Line feed
+  "\v",
+  // Vertical tab
+  "\f",
+  // Form feed
+  "\r",
+  // Carriage return
+  "\x85",
+  // Next line
+  "\u2028",
+  // Line separator
+  "\u2029"
+  // Paragraph separator
+].join("");
+var trim_start_regex = /* @__PURE__ */ new RegExp(
+  `^[${unicode_whitespaces}]*`
+);
+var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
+function print(string2) {
+  if (typeof process === "object" && process.stdout?.write) {
+    process.stdout.write(string2);
+  } else if (typeof Deno === "object") {
+    Deno.stdout.writeSync(new TextEncoder().encode(string2));
+  } else {
+    console.log(string2);
+  }
+}
+function print_error(string2) {
+  if (typeof process === "object" && process.stderr?.write) {
+    process.stderr.write(string2);
+  } else if (typeof Deno === "object") {
+    Deno.stderr.writeSync(new TextEncoder().encode(string2));
+  } else {
+    console.error(string2);
+  }
+}
+function new_map() {
+  return Dict.new();
+}
+function map_get(map2, key) {
+  const value = map2.get(key, NOT_FOUND);
+  if (value === NOT_FOUND) {
+    return new Error(Nil);
+  }
+  return new Ok(value);
+}
+function map_insert(key, value, map2) {
+  return map2.set(key, value);
+}
+
 // build/dev/javascript/vdom/dom_ffi.mjs
 function query_selector(selectors) {
   const node = document.querySelector(selectors);
@@ -1615,9 +1632,6 @@ function query_selector(selectors) {
 }
 function create_element(element) {
   return document.createElement(element);
-}
-function log_element(txt, element) {
-  console.log(`${txt} ${element}`);
 }
 function set_element_text(element, content) {
   element.textContent = content;
@@ -1650,12 +1664,12 @@ function get_child_nodes(element) {
   return values2;
 }
 var HandleInputEvent = class {
-  constructor(root, update2, view, diff_one2, apply_dom) {
+  constructor(root, update2, view, diff_one, apply_dom) {
     this.root = root;
     this.update = update2;
     this.view = view;
     this.apply_dom = apply_dom;
-    this.diff_one = diff_one2;
+    this.diff_one = diff_one;
   }
   run(event, state, current_view) {
     let current_data = event.target.value;
@@ -1669,39 +1683,35 @@ var HandleInputEvent = class {
     return [new_state, new_html];
   }
 };
-var HandleClickEvent = class {
-  constructor(root, update2, view, diff_one2, apply_dom) {
+var HandleEvent = class {
+  constructor(root, update2, view, diff_one, apply_dom) {
     this.data = "";
     this.root = root;
     this.update = update2;
     this.view = view;
     this.apply_dom = apply_dom;
-    this.diff_one = diff_one2;
+    this.diff_one = diff_one;
   }
   run(event, state, current_view) {
     let arg = event.target["event_msg"];
-    console.log("click");
     let new_state = this.update(arg, state);
     let new_html = this.view(new_state);
     let mod_tree = this.diff_one(current_view, new_html);
-    console.log(mod_tree);
     window.requestAnimationFrame(() => {
       this.apply_dom(this.root, mod_tree);
     });
     return [new_state, new_html];
   }
 };
-function Browser_init_loop(init_model, update2, view, root, events, diff_one2, apply_dom) {
-  console.log("Now runnig Browser");
+function Browser_init_loop(init_model, update2, view, root, get_events, diff_one, apply_dom) {
   let curr_state = init_model;
   let curr_view = view(init_model);
-  let event_array = [...events];
+  let event_array = [...get_events(curr_view)];
   event_array.forEach((name) => {
-    let event_runner = name == "input" ? new HandleInputEvent(root, update2, view, diff_one2, apply_dom) : new HandleClickEvent(root, update2, view, diff_one2, apply_dom);
+    let event_runner = name === "input" ? new HandleInputEvent(root, update2, view, diff_one, apply_dom) : new HandleEvent(root, update2, view, diff_one, apply_dom);
     root.addEventListener(name, (event) => {
       if (event.target && event.target["event_msg"]) {
         let [new_state, new_view] = event_runner.run(event, curr_state, curr_view);
-        console.log(new_state, new_view);
         curr_state = new_state;
         curr_view = new_view;
       }
@@ -1709,7 +1719,7 @@ function Browser_init_loop(init_model, update2, view, root, events, diff_one2, a
   });
 }
 
-// build/dev/javascript/vdom/vdom/virtual_dom.mjs
+// build/dev/javascript/vdom/vdom/html.mjs
 var Prop = class extends CustomType {
   constructor(name, value) {
     super();
@@ -1718,13 +1728,6 @@ var Prop = class extends CustomType {
   }
 };
 var Event = class extends CustomType {
-  constructor(name, args) {
-    super();
-    this.name = name;
-    this.args = args;
-  }
-};
-var EventFun = class extends CustomType {
   constructor(name, args) {
     super();
     this.name = name;
@@ -1745,6 +1748,27 @@ var TextNode = class extends CustomType {
     this.content = content;
   }
 };
+function p(props, children) {
+  return new HTMLTag("p", props, children);
+}
+function div(props, children) {
+  return new HTMLTag("div", props, children);
+}
+function button(props, children) {
+  return new HTMLTag(
+    "button",
+    append(props, toList([new Prop("type", "button")])),
+    children
+  );
+}
+function on(event_type, msg) {
+  return new Event(event_type, msg);
+}
+function onclick(msg) {
+  return on("click", msg);
+}
+
+// build/dev/javascript/vdom/vdom/virtual_dom.mjs
 var Nop = class extends CustomType {
 };
 var Create = class extends CustomType {
@@ -1779,9 +1803,6 @@ var ModTree = class extends CustomType {
     this.children = children;
   }
 };
-function on_input(msg) {
-  return new EventFun("input", msg);
-}
 function contains_prop_name(lst, item) {
   return fold_until(
     lst,
@@ -1832,7 +1853,7 @@ function diff_list(old, new$) {
       } else {
         let old_node = old.head;
         let rest = $;
-        return append2(
+        return append(
           toList([new ModTree(new Remove(old_node), toList([]))]),
           map(
             rest,
@@ -1851,7 +1872,7 @@ function diff_list(old, new$) {
     } else {
       let new_node = new$.head;
       let rest = $;
-      return append2(
+      return append(
         toList([new ModTree(new Create(new_node), toList([]))]),
         map(
           rest,
@@ -1868,28 +1889,28 @@ function diff_list(old, new$) {
       if ($1 instanceof Empty) {
         let new_node = new$.head;
         let old_node = old.head;
-        return toList([diff_one(old_node, new_node)]);
+        return toList([diff_v_dom(old_node, new_node)]);
       } else {
         let new_node = new$.head;
         let rest_2 = $1;
         let old_node = old.head;
         let rest_1 = $;
-        let tree = diff_one(old_node, new_node);
+        let tree = diff_v_dom(old_node, new_node);
         let other = diff_list(rest_1, rest_2);
-        return append2(toList([tree]), other);
+        return append(toList([tree]), other);
       }
     } else {
       let new_node = new$.head;
       let rest_2 = new$.tail;
       let old_node = old.head;
       let rest_1 = $;
-      let tree = diff_one(old_node, new_node);
+      let tree = diff_v_dom(old_node, new_node);
       let other = diff_list(rest_1, rest_2);
-      return append2(toList([tree]), other);
+      return append(toList([tree]), other);
     }
   }
 }
-function diff_one(old, new$) {
+function diff_v_dom(old, new$) {
   if (new$ instanceof HTMLTag) {
     if (old instanceof HTMLTag) {
       let tag_2 = new$.tagname;
@@ -1929,56 +1950,87 @@ function diff_one(old, new$) {
   }
 }
 
-// build/dev/javascript/vdom/vdom/dom_ffi.mjs
-function set_attribute_type(ele, props) {
-  if (props instanceof Empty) {
-    return toList([]);
-  } else {
-    let $ = props.tail;
-    if ($ instanceof Empty) {
-      let first2 = props.head;
-      if (first2 instanceof Prop) {
-        let name = first2.name;
-        let value = first2.value;
-        set_attribute(ele, [name, value]);
-        return toList([]);
-      } else if (first2 instanceof Event) {
-        let name = first2.name;
-        let args = first2.args;
-        set_element_event_prop(ele, args);
-        echo(args, "src\\vdom\\dom_ffi.gleam", 85);
-        return toList([name]);
-      } else {
-        let name = first2.name;
-        let func = first2.args;
-        set_element_event_prop(ele, func);
-        echo(func, "src\\vdom\\dom_ffi.gleam", 90);
-        return toList([name]);
-      }
+// build/dev/javascript/vdom/vdom/dom_operations.mjs
+function set_attribute_type(loop$ele, loop$props) {
+  while (true) {
+    let ele = loop$ele;
+    let props = loop$props;
+    if (props instanceof Empty) {
+      return void 0;
     } else {
-      let first2 = props.head;
-      let rest = $;
-      let _block;
-      if (first2 instanceof Prop) {
-        let name = first2.name;
-        let value = first2.value;
-        set_attribute(ele, [name, value]);
-        _block = toList([]);
-      } else if (first2 instanceof Event) {
-        let name = first2.name;
-        let args = first2.args;
-        set_element_event_prop(ele, args);
-        _block = toList([name]);
+      let $ = props.tail;
+      if ($ instanceof Empty) {
+        let first2 = props.head;
+        if (first2 instanceof Prop) {
+          let name = first2.name;
+          let value = first2.value;
+          return set_attribute(ele, [name, value]);
+        } else if (first2 instanceof Event) {
+          let args = first2.args;
+          return set_element_event_prop(ele, args);
+        } else {
+          let func = first2.args;
+          return set_element_event_prop(ele, func);
+        }
       } else {
-        let name = first2.name;
-        let func = first2.args;
-        set_element_event_prop(ele, func);
-        echo(func, "src\\vdom\\dom_ffi.gleam", 107);
-        _block = toList([name]);
+        let first2 = props.head;
+        let rest = $;
+        if (first2 instanceof Prop) {
+          let name = first2.name;
+          let value = first2.value;
+          set_attribute(ele, [name, value]);
+        } else if (first2 instanceof Event) {
+          let args = first2.args;
+          set_element_event_prop(ele, args);
+        } else {
+          let func = first2.args;
+          set_element_event_prop(ele, func);
+        }
+        loop$ele = ele;
+        loop$props = rest;
       }
-      let lst = _block;
-      return append2(lst, set_attribute_type(ele, rest));
     }
+  }
+}
+function create_elements_from_vdom(root, v_element) {
+  if (v_element instanceof HTMLTag) {
+    let tag = v_element.tagname;
+    let props = v_element.properties;
+    let children = v_element.children;
+    let new_tag = create_element(tag);
+    set_attribute_type(new_tag, props);
+    each(
+      children,
+      (x) => {
+        return create_elements_from_vdom(new_tag, x);
+      }
+    );
+    return append_element(root, new_tag);
+  } else {
+    let content = v_element.content;
+    return set_element_text(root, content);
+  }
+}
+function apply_from_v_dom(root, html) {
+  return create_elements_from_vdom(root, html);
+}
+function replace_from_dom(root, element) {
+  if (element instanceof HTMLTag) {
+    let tag = element.tagname;
+    let props = element.properties;
+    let children = element.children;
+    let new_element = create_element(tag);
+    set_attribute_type(new_element, props);
+    each(
+      children,
+      (x) => {
+        return create_elements_from_vdom(new_element, x);
+      }
+    );
+    return dom_replace_with(root, new_element);
+  } else {
+    let content = element.content;
+    return set_element_text(root, content);
   }
 }
 function remove_attribute_type(loop$ele, loop$props) {
@@ -2016,6 +2068,152 @@ function remove_attribute_type(loop$ele, loop$props) {
         loop$props = rest;
       }
     }
+  }
+}
+function modify_dom(ele, prop_remove, prop_add) {
+  set_attribute_type(ele, prop_add);
+  return remove_attribute_type(ele, prop_remove);
+}
+function is_event(item) {
+  if (item instanceof Prop) {
+    return false;
+  } else {
+    return true;
+  }
+}
+function extract_all_events(root) {
+  if (root instanceof HTMLTag) {
+    let prop = root.properties;
+    let children = root.children;
+    let current_events = filter(prop, is_event);
+    let rest = flatten(map(children, extract_all_events));
+    return append(current_events, rest);
+  } else {
+    return toList([]);
+  }
+}
+function filter_event_names(events) {
+  let event_names = map(
+    events,
+    (x) => {
+      if (x instanceof Prop) {
+        return "";
+      } else if (x instanceof Event) {
+        let name = x.name;
+        return name;
+      } else {
+        let name = x.name;
+        return name;
+      }
+    }
+  );
+  return filter(event_names, (x) => {
+    return x !== "";
+  });
+}
+function get_all_event_names(root) {
+  let _pipe = extract_all_events(root);
+  let _pipe$1 = filter_event_names(_pipe);
+  return unique(_pipe$1);
+}
+function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
+  while (true) {
+    let parent = loop$parent;
+    let elements = loop$elements;
+    let tree = loop$tree;
+    echo(tree, "src\\vdom\\dom_operations.gleam", 66);
+    if (tree instanceof Empty) {
+      if (elements instanceof Empty) {
+        return void 0;
+      } else {
+        let $ = elements.tail;
+        if ($ instanceof Empty) {
+          return void 0;
+        } else {
+          return void 0;
+        }
+      }
+    } else if (elements instanceof Empty) {
+      let $ = tree.tail;
+      if ($ instanceof Empty) {
+        let tree$1 = tree.head;
+        return parse_mod_tree(parent, tree$1);
+      } else {
+        let tree$1 = tree.head;
+        let rest = $;
+        parse_mod_tree(parent, tree$1);
+        return each(rest, (x) => {
+          return parse_mod_tree(parent, x);
+        });
+      }
+    } else {
+      let $ = elements.tail;
+      if ($ instanceof Empty) {
+        let $1 = tree.tail;
+        if ($1 instanceof Empty) {
+          let tree$1 = tree.head;
+          let ele = elements.head;
+          return parse_mod_tree(ele, tree$1);
+        } else {
+          let tree_op = tree.head;
+          let rest = $1;
+          let ele = elements.head;
+          parse_mod_tree(ele, tree_op);
+          return each(rest, (x) => {
+            return parse_mod_tree(parent, x);
+          });
+        }
+      } else {
+        let $1 = tree.tail;
+        if ($1 instanceof Empty) {
+          let tree_op = tree.head;
+          let ele = elements.head;
+          let siblings = $;
+          return parse_mod_tree(ele, tree_op);
+        } else {
+          let tree_op = tree.head;
+          let op_rest = $1;
+          let ele = elements.head;
+          let siblings = $;
+          parse_mod_tree(ele, tree_op);
+          loop$parent = parent;
+          loop$elements = siblings;
+          loop$tree = op_rest;
+        }
+      }
+    }
+  }
+}
+function parse_mod_tree(ele, tree) {
+  let $ = tree.diff_op;
+  if ($ instanceof Nop) {
+    let child_elements = get_child_nodes(ele);
+    apply_to_modtree_list(ele, child_elements, tree.children);
+    return void 0;
+  } else if ($ instanceof Create) {
+    let dom = $[0];
+    return create_elements_from_vdom(ele, dom);
+  } else if ($ instanceof Remove) {
+    return remove_element(ele);
+  } else if ($ instanceof Replace) {
+    let dom = $[0];
+    return replace_from_dom(ele, dom);
+  } else {
+    let prop_remove = $.prop_remove;
+    let prop_set = $.prop_add;
+    modify_dom(ele, prop_remove, prop_set);
+    let child_elements = get_child_nodes(ele);
+    return apply_to_modtree_list(ele, child_elements, tree.children);
+  }
+}
+function apply_from_mod_tree(root, tree) {
+  let children = get_child_nodes(root);
+  let $ = first(children);
+  if ($ instanceof Ok) {
+    let ele = $[0];
+    return parse_mod_tree(ele, tree);
+  } else {
+    return void 0;
   }
 }
 function echo(value, file, line) {
@@ -2173,356 +2371,6 @@ function echo$isDict(value) {
   }
 }
 
-// build/dev/javascript/vdom/vdom/mod_tree_parser.mjs
-function modify_dom(ele, prop_remove, prop_add) {
-  set_attribute_type(ele, prop_add);
-  return remove_attribute_type(ele, prop_remove);
-}
-function yet_another_create_elements(root, v_element) {
-  if (v_element instanceof HTMLTag) {
-    let tag = v_element.tagname;
-    let props = v_element.properties;
-    let children = v_element.children;
-    let new_tag = create_element(tag);
-    set_attribute_type(new_tag, props);
-    each(
-      children,
-      (x) => {
-        return yet_another_create_elements(new_tag, x);
-      }
-    );
-    return append_element(root, new_tag);
-  } else {
-    let content = v_element.content;
-    return set_element_text(root, content);
-  }
-}
-function replace_from_dom(root, element) {
-  if (element instanceof HTMLTag) {
-    let tag = element.tagname;
-    let props = element.properties;
-    let children = element.children;
-    let new_element = create_element(tag);
-    set_attribute_type(new_element, props);
-    each(
-      children,
-      (x) => {
-        return yet_another_create_elements(new_element, x);
-      }
-    );
-    return dom_replace_with(root, new_element);
-  } else {
-    let content = element.content;
-    return set_element_text(root, content);
-  }
-}
-function apply_to_modtree_list(loop$parent, loop$elements, loop$tree) {
-  while (true) {
-    let parent = loop$parent;
-    let elements = loop$elements;
-    let tree = loop$tree;
-    echo2(tree, "src\\vdom\\mod_tree_parser.gleam", 84);
-    if (tree instanceof Empty) {
-      if (elements instanceof Empty) {
-        return void 0;
-      } else {
-        let $ = elements.tail;
-        if ($ instanceof Empty) {
-          return void 0;
-        } else {
-          return void 0;
-        }
-      }
-    } else if (elements instanceof Empty) {
-      let $ = tree.tail;
-      if ($ instanceof Empty) {
-        let tree$1 = tree.head;
-        return parse_dom_tree(parent, tree$1);
-      } else {
-        let tree$1 = tree.head;
-        let rest = $;
-        log_element("parent: ", parent);
-        parse_dom_tree(parent, tree$1);
-        return each(rest, (x) => {
-          return parse_dom_tree(parent, x);
-        });
-      }
-    } else {
-      let $ = elements.tail;
-      if ($ instanceof Empty) {
-        let $1 = tree.tail;
-        if ($1 instanceof Empty) {
-          let tree$1 = tree.head;
-          let ele = elements.head;
-          log_element("current: ", ele);
-          return parse_dom_tree(ele, tree$1);
-        } else {
-          let tree_op = tree.head;
-          let rest = $1;
-          let ele = elements.head;
-          log_element("current: ", ele);
-          parse_dom_tree(ele, tree_op);
-          return each(rest, (x) => {
-            return parse_dom_tree(parent, x);
-          });
-        }
-      } else {
-        let $1 = tree.tail;
-        if ($1 instanceof Empty) {
-          let tree_op = tree.head;
-          let ele = elements.head;
-          let siblings = $;
-          log_element("current: ", ele);
-          return parse_dom_tree(ele, tree_op);
-        } else {
-          let tree_op = tree.head;
-          let op_rest = $1;
-          let ele = elements.head;
-          let siblings = $;
-          log_element("parent: ", ele);
-          parse_dom_tree(ele, tree_op);
-          loop$parent = parent;
-          loop$elements = siblings;
-          loop$tree = op_rest;
-        }
-      }
-    }
-  }
-}
-function parse_dom_tree(ele, tree) {
-  let $ = tree.diff_op;
-  if ($ instanceof Nop) {
-    let child_elements = get_child_nodes(ele);
-    apply_to_modtree_list(ele, child_elements, tree.children);
-    return void 0;
-  } else if ($ instanceof Create) {
-    let dom = $[0];
-    log_element("create parent: ", ele);
-    return yet_another_create_elements(ele, dom);
-  } else if ($ instanceof Remove) {
-    let dom = $[0];
-    remove_element(ele);
-    return console_log("Done removing them");
-  } else if ($ instanceof Replace) {
-    let dom = $[0];
-    print("Replacing Dom");
-    return replace_from_dom(ele, dom);
-  } else {
-    let prop_remove = $.prop_remove;
-    let prop_set = $.prop_add;
-    print("Modifying props");
-    modify_dom(ele, prop_remove, prop_set);
-    let child_elements = get_child_nodes(ele);
-    return apply_to_modtree_list(ele, child_elements, tree.children);
-  }
-}
-function apply_to_dom(root, tree) {
-  let children = get_child_nodes(root);
-  let $ = first(children);
-  if ($ instanceof Ok) {
-    let ele = $[0];
-    return parse_dom_tree(ele, tree);
-  } else {
-    return void 0;
-  }
-}
-function create_element_from_list_vdom(root, v_elements, curr_event) {
-  if (v_elements instanceof Empty) {
-    return curr_event;
-  } else {
-    let $ = v_elements.tail;
-    if ($ instanceof Empty) {
-      let element = v_elements.head;
-      let values2 = create_element_from_vhtml(root, element);
-      return append2(values2[1], curr_event);
-    } else {
-      let element = v_elements.head;
-      let rest = $;
-      let values2 = create_element_from_vhtml(root, element);
-      let rest_of_events = create_element_from_list_vdom(root, rest, values2[1]);
-      return append2(rest_of_events, curr_event);
-    }
-  }
-}
-function create_element_from_vhtml(root, v_element) {
-  if (v_element instanceof HTMLTag) {
-    let tag = v_element.tagname;
-    let props = v_element.properties;
-    let children = v_element.children;
-    let new_element = create_element(tag);
-    let event = set_attribute_type(new_element, props);
-    append_element(root, new_element);
-    let other_events = create_element_from_list_vdom(
-      new_element,
-      children,
-      toList([])
-    );
-    return [new_element, append2(other_events, event)];
-  } else {
-    let content = v_element.content;
-    set_element_text(root, content);
-    return [root, toList([])];
-  }
-}
-function inital_dom_apply(root, html) {
-  let node_event_tuple = create_element_from_vhtml(root, html);
-  return node_event_tuple[1];
-}
-function echo2(value, file, line) {
-  const grey = "\x1B[90m";
-  const reset_color = "\x1B[39m";
-  const file_line = `${file}:${line}`;
-  const string_value = echo$inspect2(value);
-  if (globalThis.process?.stderr?.write) {
-    const string2 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    process.stderr.write(string2);
-  } else if (globalThis.Deno) {
-    const string2 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string2));
-  } else {
-    const string2 = `${file_line}
-${string_value}`;
-    globalThis.console.log(string2);
-  }
-  return value;
-}
-function echo$inspectString2(str) {
-  let new_str = '"';
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i];
-    if (char == "\n")
-      new_str += "\\n";
-    else if (char == "\r")
-      new_str += "\\r";
-    else if (char == "	")
-      new_str += "\\t";
-    else if (char == "\f")
-      new_str += "\\f";
-    else if (char == "\\")
-      new_str += "\\\\";
-    else if (char == '"')
-      new_str += '\\"';
-    else if (char < " " || char > "~" && char < "\xA0") {
-      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
-    } else {
-      new_str += char;
-    }
-  }
-  new_str += '"';
-  return new_str;
-}
-function echo$inspectDict2(map2) {
-  let body = "dict.from_list([";
-  let first2 = true;
-  let key_value_pairs = [];
-  map2.forEach((value, key) => {
-    key_value_pairs.push([key, value]);
-  });
-  key_value_pairs.sort();
-  key_value_pairs.forEach(([key, value]) => {
-    if (!first2)
-      body = body + ", ";
-    body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value) + ")";
-    first2 = false;
-  });
-  return body + "])";
-}
-function echo$inspectCustomType2(record) {
-  const props = globalThis.Object.keys(record).map((label) => {
-    const value = echo$inspect2(record[label]);
-    return isNaN(parseInt(label)) ? `${label}: ${value}` : value;
-  }).join(", ");
-  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-}
-function echo$inspectObject2(v) {
-  const name = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-  const props = [];
-  for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect2(k)}: ${echo$inspect2(v[k])}`);
-  }
-  const body = props.length ? " " + props.join(", ") + " " : "";
-  const head = name === "Object" ? "" : name + " ";
-  return `//js(${head}{${body}})`;
-}
-function echo$inspect2(v) {
-  const t = typeof v;
-  if (v === true)
-    return "True";
-  if (v === false)
-    return "False";
-  if (v === null)
-    return "//js(null)";
-  if (v === void 0)
-    return "Nil";
-  if (t === "string")
-    return echo$inspectString2(v);
-  if (t === "bigint" || t === "number")
-    return v.toString();
-  if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect2).join(", ")})`;
-  if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect2).join(", ")}]`;
-  if (v instanceof UtfCodepoint)
-    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray)
-    return echo$inspectBitArray2(v);
-  if (v instanceof CustomType)
-    return echo$inspectCustomType2(v);
-  if (echo$isDict2(v))
-    return echo$inspectDict2(v);
-  if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect2).join(", ")}))`;
-  if (v instanceof RegExp)
-    return `//js(${v})`;
-  if (v instanceof Date)
-    return `//js(Date("${v.toISOString()}"))`;
-  if (v instanceof Function) {
-    const args = [];
-    for (const i of Array(v.length).keys())
-      args.push(String.fromCharCode(i + 97));
-    return `//fn(${args.join(", ")}) { ... }`;
-  }
-  return echo$inspectObject2(v);
-}
-function echo$inspectBitArray2(bitArray) {
-  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
-  let alignedBytes = bitArraySlice(
-    bitArray,
-    bitArray.bitOffset,
-    endOfAlignedBytes
-  );
-  let remainingUnalignedBits = bitArray.bitSize % 8;
-  if (remainingUnalignedBits > 0) {
-    let remainingBits = bitArraySliceToInt(
-      bitArray,
-      endOfAlignedBytes,
-      bitArray.bitSize,
-      false,
-      false
-    );
-    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
-    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
-    if (alignedBytesArray.length === 0) {
-      return `<<${suffix}>>`;
-    } else {
-      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
-    }
-  } else {
-    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
-  }
-}
-function echo$isDict2(value) {
-  try {
-    return value instanceof Dict;
-  } catch {
-    return false;
-  }
-}
-
 // build/dev/javascript/vdom/vdom/browser.mjs
 function simple(model, update2, view) {
   return [model, update2, view];
@@ -2533,135 +2381,58 @@ function start(app, element) {
     let ele = $[0];
     print("Setting up event");
     let current_view = app[2](app[0]);
-    let events = unique(inital_dom_apply(ele, current_view));
+    apply_from_v_dom(ele, current_view);
     return Browser_init_loop(
       app[0],
       app[1],
       app[2],
       ele,
-      events,
-      diff_one,
-      apply_to_dom
+      get_all_event_names,
+      diff_v_dom,
+      apply_from_mod_tree
     );
   } else {
     return print_error("No element called #main found");
   }
 }
 
-// build/dev/javascript/vdom/vdom/html.mjs
-function text(content) {
-  return new TextNode(content);
-}
-function div(props, children) {
-  return new HTMLTag("div", props, children);
-}
-
 // build/dev/javascript/vdom/vdom.mjs
-var State = class extends CustomType {
-  constructor(name, password, password_again) {
-    super();
-    this.name = name;
-    this.password = password;
-    this.password_again = password_again;
-  }
+var Increment = class extends CustomType {
 };
-var Name = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var Password = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var PasswordAgain = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
+var Decrement = class extends CustomType {
 };
 function update(msg, s) {
-  if (msg instanceof Name) {
-    let val = msg[0];
-    return new State(val, s.password, s.password_again);
-  } else if (msg instanceof Password) {
-    let val = msg[0];
-    return new State(s.name, val, s.password_again);
+  if (msg instanceof Increment) {
+    return s + 1;
   } else {
-    let val = msg[0];
-    return new State(s.name, s.password, val);
-  }
-}
-function validation_view(s) {
-  let $ = s.password === s.password_again;
-  if ($) {
-    return div(
-      toList([new Prop("style", "color: green")]),
-      toList([text("Ok")])
-    );
-  } else {
-    return div(
-      toList([new Prop("style", "color: red")]),
-      toList([text("Password do not match")])
-    );
+    return s - 1;
   }
 }
 function main_view(s) {
   return div(
     toList([]),
     toList([
-      new HTMLTag(
-        "input",
-        toList([
-          new Prop("placeholder", "Name"),
-          new Prop("value", s.name),
-          on_input((var0) => {
-            return new Name(var0);
-          })
-        ]),
-        toList([])
+      button(
+        toList([onclick(new Increment())]),
+        toList([new TextNode("+")])
       ),
-      new HTMLTag(
-        "input",
-        toList([
-          new Prop("placeholder", "Password"),
-          new Prop("value", s.password),
-          on_input((var0) => {
-            return new Password(var0);
-          })
-        ]),
-        toList([])
-      ),
-      new HTMLTag(
-        "input",
-        toList([
-          new Prop("placeholder", "Re-Enter Password"),
-          new Prop("value", s.password_again),
-          on_input((var0) => {
-            return new PasswordAgain(var0);
-          })
-        ]),
-        toList([])
-      ),
-      validation_view(s)
+      p(toList([]), toList([new TextNode(to_string(s))])),
+      button(
+        toList([onclick(new Decrement())]),
+        toList([new TextNode("-")])
+      )
     ])
   );
 }
 function main() {
-  let init_state = new State("", "", "");
+  let init_state = 0;
   let app = simple(init_state, update, main_view);
   return start(app, "#main");
 }
 export {
-  Name,
-  Password,
-  PasswordAgain,
-  State,
+  Decrement,
+  Increment,
   main,
   main_view,
-  update,
-  validation_view
+  update
 };
