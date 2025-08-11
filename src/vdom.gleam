@@ -1,7 +1,6 @@
 import vdom/browser
 import vdom/html as h
 
-
 pub fn main() -> Nil {
   let init_state = State("", "", "")
   let app = browser.simple(init_state, update, main_view)

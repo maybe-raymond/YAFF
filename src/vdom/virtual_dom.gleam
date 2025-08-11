@@ -86,7 +86,6 @@ fn diff_list(old: List(Html(msg)), new: List(Html(msg))) -> List(ModTree(msg)) {
   }
 }
 
-
 // Helper functions for the Modify Operation 
 // Modify is used when the elements are the same but have different propoerties attached to them  
 fn contains_prop_name(lst: List(Attribute(msg)), item: Attribute(msg)) -> Bool {

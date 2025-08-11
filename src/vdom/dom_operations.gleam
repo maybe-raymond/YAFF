@@ -2,8 +2,14 @@
 //// between the Dom, Virtual Dom and ModTree
 
 import gleam/list
-import vdom/dom_ffi.{type DomElement, get_child_nodes, remove_element,create_element,remove_attribute,dom_replace_with,set_attribute,set_element_text,append_element,set_element_event_prop,remove_event_prop}
-import vdom/html.{type Html,TextNode,HTMLTag,type Attribute, Prop,Event,EventFun}
+import vdom/dom_ffi.{
+  type DomElement, append_element, create_element, dom_replace_with,
+  get_child_nodes, remove_attribute, remove_element, remove_event_prop,
+  set_attribute, set_element_event_prop, set_element_text,
+}
+import vdom/html.{
+  type Attribute, type Html, Event, EventFun, HTMLTag, Prop, TextNode,
+}
 import vdom/virtual_dom.{type ModTree, Create, Modify, Nop, Remove, Replace}
 
 // Applies a virtual Dom onto the Real Dom
@@ -28,9 +34,6 @@ pub fn apply_from_mod_tree(root: DomElement, tree: ModTree(msg)) -> Nil {
     }
   }
 }
-
-
-
 
 // Goes over the Mod Tree and applies the changes to the real Dom
 fn parse_mod_tree(ele: DomElement, tree: ModTree(msg)) {
@@ -129,15 +132,10 @@ fn create_elements_from_vdom(root: DomElement, v_element: Html(msg)) -> Nil {
   }
 }
 
-
-
 // Wrappers for Attributes Events
 // These are helper functions to make an event and Addtriute different 
 
-pub fn set_attribute_type(
-  ele: DomElement,
-  props: List(Attribute(msg)),
-) -> Nil {
+pub fn set_attribute_type(ele: DomElement, props: List(Attribute(msg))) -> Nil {
   case props {
     [] -> Nil
     [first] -> {
@@ -193,8 +191,6 @@ pub fn remove_attribute_type(
     }
   }
 }
-
-
 
 fn is_event(item: Attribute(msg)) {
   case item {
