@@ -1,14 +1,12 @@
-import vdom/browser
-import vdom/html as h
-import gleam/int 
-
+import gleam/int
+import yafff/browser
+import yafff/html as h
 
 pub fn main() -> Nil {
   let init_state = 0
   let app = browser.simple(init_state, update, main_view)
   browser.start(app, "#main")
 }
-
 
 pub type Msg {
   Increment

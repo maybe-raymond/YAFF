@@ -9,12 +9,12 @@
 //// let assert Ok(_) = lustre.start(app, "#app", Nil)
 
 import gleam/io
-import vdom/dom_ffi.{browser_init_loop, query_selector}
-import vdom/dom_operations.{
+import yafff/dom_ffi.{browser_init_loop, query_selector}
+import yafff/dom_operations.{
   apply_from_mod_tree, apply_from_v_dom, get_all_event_names,
 }
-import vdom/html.{type Html}
-import vdom/virtual_dom.{diff_v_dom}
+import yafff/html.{type Html}
+import yafff/virtual_dom.{diff_v_dom}
 
 pub fn simple(
   model: state,

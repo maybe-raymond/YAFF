@@ -1,8 +1,8 @@
 import gleeunit
 import gleeunit/should
-import vdom/dom_operations.{extract_all_events}
-import vdom/html as h
-import vdom/virtual_dom.{
+import yafff/dom_operations.{extract_all_events}
+import yafff/html as h
+import yafff/virtual_dom.{
   Create, ModTree, Modify, Nop, Remove, Replace, diff_v_dom,
 }
 

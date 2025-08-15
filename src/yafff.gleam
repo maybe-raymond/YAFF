@@ -1,5 +1,5 @@
-import vdom/browser
-import vdom/html as h
+import yafff/browser
+import yafff/html as h
 
 pub fn main() -> Nil {
   let init_state = State("", "", "")

@@ -2,7 +2,7 @@
 //// ModTree is used to show what operations to do for a v_dom to match another v_dom
 
 import gleam/list
-import vdom/html.{
+import yafff/html.{
   type Attribute, type Html, Event, EventFun, HTMLTag, Prop, TextNode,
 }
 

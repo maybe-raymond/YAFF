@@ -2,15 +2,15 @@
 //// between the Dom, Virtual Dom and ModTree
 
 import gleam/list
-import vdom/dom_ffi.{
+import yafff/dom_ffi.{
   type DomElement, append_element, create_element, dom_replace_with,
   get_child_nodes, remove_attribute, remove_element, remove_event_prop,
   set_attribute, set_element_event_prop, set_element_text,
 }
-import vdom/html.{
+import yafff/html.{
   type Attribute, type Html, Event, EventFun, HTMLTag, Prop, TextNode,
 }
-import vdom/virtual_dom.{type ModTree, Create, Modify, Nop, Remove, Replace}
+import yafff/virtual_dom.{type ModTree, Create, Modify, Nop, Remove, Replace}
 
 // Applies a virtual Dom onto the Real Dom
 // This should only be used when initialising the application
